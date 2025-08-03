@@ -1,0 +1,2 @@
+# nolint
+Automate adding // NOLINT
