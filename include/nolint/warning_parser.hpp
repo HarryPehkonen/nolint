@@ -2,9 +2,9 @@
 
 #include "interfaces.hpp"
 #include "types.hpp"
+#include <optional>
 #include <regex>
 #include <string>
-#include <optional>
 
 namespace nolint {
 
@@ -16,7 +16,7 @@ private:
     // Regex patterns for parsing clang-tidy output
     static const std::regex warning_pattern_;
     static const std::regex note_pattern_;
-    
+
     auto parse_warning_line(const std::string& line) -> std::optional<Warning>;
     auto parse_note_line(const std::string& line) -> std::optional<int>;
 };

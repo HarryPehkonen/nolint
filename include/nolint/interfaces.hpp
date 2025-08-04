@@ -24,7 +24,8 @@ class IFileSystem {
 public:
     virtual ~IFileSystem() = default;
     virtual auto read_file(const std::string& path) -> std::vector<std::string> = 0;
-    virtual auto write_file(const std::string& path, const std::vector<std::string>& lines) -> void = 0;
+    virtual auto write_file(const std::string& path, const std::vector<std::string>& lines) -> void
+        = 0;
     virtual auto file_exists(const std::string& path) -> bool = 0;
 };
 

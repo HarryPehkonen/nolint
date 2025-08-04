@@ -1,9 +1,9 @@
-#include "nolint/nolint_processor.hpp"
-#include "nolint/warning_parser.hpp"
 #include "nolint/file_manager.hpp"
+#include "nolint/nolint_processor.hpp"
 #include "nolint/simple_ui.hpp"
-#include <iostream>
+#include "nolint/warning_parser.hpp"
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -22,39 +22,37 @@ auto print_usage(const std::string& program_name) -> void {
 
 auto main(int argc, char* argv[]) -> int {
     std::string input_file;
-    
+
     // Parse command line arguments
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        
+
         if (arg == "--help" || arg == "-h") {
             print_usage(argv[0]);
             return 0;
-        }
-        else if (arg == "--input") {
+        } else if (arg == "--input") {
             if (i + 1 >= argc) {
                 std::cerr << "Error: --input requires a filename\n";
                 return 1;
             }
             input_file = argv[++i];
-        }
-        else {
+        } else {
             std::cerr << "Error: Unknown option " << arg << "\n";
             print_usage(argv[0]);
             return 1;
         }
     }
-    
+
     try {
         // Create components
         auto parser = std::make_unique<WarningParser>();
         auto file_system = std::make_unique<FileSystem>();
         auto file_manager = std::make_unique<FileManager>(std::move(file_system));
         auto ui = std::make_unique<SimpleUI>();
-        
+
         // Create processor
         NolintProcessor processor(std::move(parser), std::move(file_manager), std::move(ui));
-        
+
         // Process warnings
         if (input_file.empty()) {
             // Read from stdin
@@ -67,15 +65,15 @@ auto main(int argc, char* argv[]) -> int {
                 std::cerr << "Error: Cannot open input file: " << input_file << "\n";
                 return 1;
             }
-            
+
             std::cout << "Reading clang-tidy warnings from " << input_file << "...\n";
             processor.process_warnings(file);
         }
-        
+
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
-    
+
     return 0;
 }

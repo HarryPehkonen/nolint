@@ -2,8 +2,8 @@
 
 #include "interfaces.hpp"
 #include "types.hpp"
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <termios.h>
 
 namespace nolint {
@@ -13,7 +13,7 @@ class SimpleUI : public IUserInterface {
 public:
     SimpleUI();
     ~SimpleUI();
-    
+
     auto get_user_action() -> UserAction override;
     auto display_context(const WarningContext& context) -> void override;
     auto show_summary(int files_modified, int warnings_suppressed) -> void override;
@@ -24,16 +24,25 @@ private:
     NolintStyle current_style_ = NolintStyle::NOLINT_SPECIFIC;
     bool raw_mode_set_ = false;
     struct termios original_termios_;
-    
+
     auto format_nolint_style(NolintStyle style, const std::string& warning_type) -> std::string;
     auto clear_screen() -> void;
     auto highlight_line(const std::string& text) -> std::string;
     auto open_terminal() -> FILE*;
-    auto read_key() -> int;  // Read a single key (handles arrow keys)
+    auto read_key() -> int; // Read a single key (handles arrow keys)
     auto cycle_style(bool forward) -> void;
     auto setup_raw_mode() -> void;
     auto restore_terminal() -> void;
     auto colorize_comment(const std::string& text) -> std::string;
+
+    // Display helper methods
+    auto show_progress_and_warning(const WarningContext& context) -> void;
+    auto show_nolint_block_begin(const WarningContext& context) -> void;
+    auto show_code_context(const WarningContext& context) -> void;
+    auto show_nolint_block_end(const WarningContext& context) -> void;
+    auto show_prompt(const WarningContext& context) -> void;
+    auto extract_line_indentation(const std::vector<CodeLine>& lines, int line_number)
+        -> std::string;
 };
 
 } // namespace nolint

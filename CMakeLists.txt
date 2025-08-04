@@ -13,6 +13,7 @@ set(SOURCE_FILES
     src/simple_ui.cpp
     src/context_builder.cpp
     src/nolint_processor.cpp
+    src/string_utils.cpp
 )
 
 set(HEADER_FILES
@@ -23,6 +24,7 @@ set(HEADER_FILES
     include/nolint/nolint_processor.hpp
     include/nolint/interfaces.hpp
     include/nolint/types.hpp
+    include/nolint/string_utils.hpp
 )
 
 # Main executable
@@ -40,6 +42,7 @@ set(TEST_SOURCE_FILES
     src/simple_ui.cpp
     src/context_builder.cpp
     src/nolint_processor.cpp
+    src/string_utils.cpp
 )
 
 set(TEST_FILES
