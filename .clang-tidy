@@ -1,0 +1,15 @@
+HeaderFilterRegex: '.*/nolint/(include/.*\.hpp|src/.*\.cpp|tests/.*\.cpp)$'
+Checks: '-*,bugprone-*,performance-*,readability-*,modernize-*,portability-*,cppcoreguidelines-*,-modernize-use-trailing-return-type,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers'
+
+CheckOptions:
+  # Ignore complexity from macro expansions (fixes Google Test warnings)
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true
+  - key: readability-function-cognitive-complexity.Threshold
+    value: 30
+  # Allow trailing return types for any function, not just complex ones
+  - key: modernize-use-trailing-return-type.UseTrailingReturnType
+    value: true
+  - key: readability-function-size.LineThreshold
+    value: 30
+
