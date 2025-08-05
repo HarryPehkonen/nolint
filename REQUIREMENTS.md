@@ -3,6 +3,8 @@
 ## Overview
 `nolint` is a command-line tool that automatically applies `// NOLINT` comments to C++ source code based on clang-tidy warnings. It provides an interactive interface for reviewing and selectively suppressing linting warnings.
 
+**Key Insight from Implementation**: The tool's value lies in providing precise, contextual placement of suppression comments with instant visual feedback. Users need to see exactly where comments will be placed before accepting them.
+
 ## Functional Requirements
 
 ### Core Features
@@ -24,34 +26,81 @@
   - Show lines before the warning location (default: 5, configurable with `-B`)
   - Show lines after the warning location (default: 5, configurable with `-A`)
   - Highlight the specific line with the warning
-  - For NOLINTBEGIN/END mode, show extended context (entire function)
+  - **Critical**: For NOLINT_BLOCK mode, show split display with actual function boundaries and gap indicator
+  - **Visual Preview**: Show exactly where suppression comments will be placed using `+` prefix
 - Present user options:
   - `Y` - Accept and apply suppression comment
-  - `N` - Skip this warning
+  - `N` - Skip this warning  
+  - `P` - Previous warning (bidirectional navigation **with decision modification**)
   - `Q` - Quit without saving changes
   - `X` - Exit and save all pending changes
   - `S` - Save current file and continue
   - `↑/↓` - Cycle through different NOLINT formats (re-displays context with new format)
+  - **Key Feature**: Arrow keys provide live preview without advancing to next warning
+  - **Critical Feature**: P)revious allows changing/removing any previous decision
 
 #### 3. Suppression Comment Types
 Support multiple NOLINT formats (cycled with arrow keys):
-1. `// NOLINT` - Suppress all warnings on the line
-2. `// NOLINT(warning-name)` - Suppress specific warning on the line
+1. **NONE** - No suppression (allows "undo" via style selection)
+2. `// NOLINT(warning-name)` - Suppress specific warning on the line  
 3. `// NOLINTNEXTLINE(warning-name)` - Suppress warning on the next line
 4. `// NOLINTBEGIN(warning-name)` and `// NOLINTEND(warning-name)` - Block suppression
 
-For NOLINTBEGIN/END placement:
-- **Function-level warnings** with size notes: Use the reported line count to determine function bounds
-- **Other warnings**: Place BEGIN at warning line, END after configurable lines (default: 5)
+**Critical Design Decisions**:
+- **Conditional NOLINT_BLOCK**: Only show for warnings with `function_lines` metadata (e.g., readability-function-size)
+- **Smart Placement**: NOLINTBEGIN placed right before function signature, not before access specifiers
+- **Indentation Matching**: Extract indentation from target line, not warning line
+- **Style Cycling Order**: NONE → NOLINT_SPECIFIC → NOLINTNEXTLINE → NOLINT_BLOCK (if applicable) → NONE
 
-#### 4. File Modification Strategy
+For NOLINTBEGIN/END placement:
+- **Function-level warnings**: Use reported line count and smart function boundary detection
+- **Placement Logic**: NOLINTBEGIN before function signature, NOLINTEND after function closing brace
+- **Display Enhancement**: Show split view with actual code lines and gap separator (`=== N more lines ==`)
+
+#### 4. **Decision Tracking and Modification** ⭐
+
+**Critical Requirement**: Users must be able to change/remove any previous decision when navigating with P)revious.
+
+**Architecture Requirements**:
+- **Deferred Modification**: Don't apply changes immediately - track decisions separately
+- **Decision History**: Maintain record of all user decisions with ability to modify
+- **Preview Mode**: Show what final file will look like with all pending decisions
+- **Conflict Resolution**: Handle multiple warnings affecting the same line
+- **Batch Application**: Apply all decisions atomically when user confirms
+
+**User Experience Requirements**:
+- Navigate to any previous warning and change the decision (including to NONE)
+- See immediate preview of how decision change affects the file
+- Get summary of all pending decisions before final commit
+- Ability to "undo" any decision by setting style to NONE
+- Clear indication of which warnings have been processed vs. pending
+
+**Technical Requirements**:
+```cpp
+// Each file line tracks original content + pending modifications
+struct LineWithDecisions {
+    std::string original_text;
+    std::map<int, PendingModification> warning_decisions;
+    auto get_preview_text() const -> std::string;
+};
+
+// Global decision tracking for navigation
+class DecisionTracker {
+    void record_decision(int warning_id, NolintStyle style);
+    void change_decision(int warning_id, NolintStyle new_style);
+    auto get_file_preview() -> std::vector<std::string>;
+    auto apply_all_decisions() -> std::vector<std::string>;
+};
+```
+
+#### 5. File Modification Strategy
 - Load entire file into memory (`std::vector<std::string>`) on first warning
-- Apply modifications to in-memory representation
-- Track line number offsets as modifications are made
-- Preserve original file formatting and indentation
+- **Track decisions separately** from file content (metadata approach)
+- **Preserve original file** unchanged until final commit
+- Track line number calculations dynamically for preview
 - Write files only when:
-  - User selects `X` (exit and save)
-  - User selects `S` (save current file)
+  - User selects `X` (exit and save) - applies ALL pending decisions
+  - User selects `S` (save current file) - applies decisions for that file
 - Support backup files before modification (optional)
 
 ### Command-Line Interface
@@ -155,10 +204,48 @@ Saving changes...
 2 files modified, 2 warnings suppressed.
 ```
 
+## Architecture Philosophy
+
+### **Functional Programming Approach** ⭐
+The codebase should prioritize **functional programming principles** for improved testability and maintainability:
+
+1. **Pure Functions for Core Logic**:
+   - Text transformations: `apply_modification_to_lines(lines, modification) -> transformed_lines`
+   - Warning analysis: `find_function_boundaries(file_lines, warning) -> (start, end)`  
+   - Context building: `build_context(warning, file_lines, style) -> context`
+   - Indentation extraction: `extract_indentation(line) -> indent_string`
+
+2. **Separation of Pure Core from I/O Shell**:
+   ```
+   ┌─────────────────────────────────────────┐
+   │           I/O Shell                     │  <- Side effects, minimal testing
+   │  ┌─────────────────────────────────────┐ │  
+   │  │     **Functional Core**             │ │  <- Pure functions, extensive testing
+   │  │  • Text transformations             │ │  
+   │  │  • Warning processing               │ │  
+   │  │  • Context building                 │ │  
+   │  └─────────────────────────────────────┘ │
+   └─────────────────────────────────────────┘
+   ```
+
+3. **Testing Benefits**:
+   - **No mocking needed** for core business logic
+   - **Fast tests** (no I/O operations)
+   - **Deterministic behavior** (no hidden state)
+   - **Easy edge case testing** (pure input → output)
+
+### Terminal I/O Complexity Lessons
+- **Raw mode terminal handling is non-trivial**: Requires careful resource management
+- **Platform differences**: `/dev/tty` on Unix, different approach needed on Windows  
+- **Buffer management**: Multiple layers of buffering can interfere
+- **RAII essential**: Terminal state must be restored reliably
+- **Single-key input**: Use `tcsetattr()` with `VMIN=1, VTIME=0` for immediate response
+
 ## Future Enhancements
+- **Functional Architecture Migration**: Extract pure functions from current stateful components
 - Configuration file support (`.nolintrc`)
-- Undo last change functionality
 - Smart function detection using clang AST
 - Integration with version control (show diff before saving)
-- Batch mode for CI/CD pipelines
+- Batch mode for CI/CD pipelines  
 - Statistics export (CSV/JSON format)
+- **Property-based testing** for text transformation functions

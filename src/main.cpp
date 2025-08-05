@@ -1,79 +1,99 @@
-#include "nolint/file_manager.hpp"
-#include "nolint/nolint_processor.hpp"
-#include "nolint/simple_ui.hpp"
-#include "nolint/warning_parser.hpp"
-#include <fstream>
+#include "file_io.hpp"
+#include "nolint_app.hpp"
+#include "terminal_io.hpp"
+#include "warning_parser.hpp"
+
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
-using namespace nolint;
+namespace {
 
-auto print_usage(const std::string& program_name) -> void {
-    std::cout << "Usage: " << program_name << " [OPTIONS]\n";
-    std::cout << "\nOptions:\n";
-    std::cout << "  --input <file>    Read clang-tidy warnings from file\n";
-    std::cout << "  --help           Show this help message\n";
-    std::cout << "\nIf no --input is specified, reads from stdin.\n";
-    std::cout << "\nExample:\n";
+void print_usage(const char* program_name) {
+    std::cout << "Usage: " << program_name << " [OPTIONS]\n\n";
+    std::cout << "Interactive tool for adding NOLINT comments to suppress clang-tidy warnings.\n\n";
+    std::cout << "OPTIONS:\n";
+    std::cout << "  -i, --input FILE     Read clang-tidy output from FILE (default: stdin)\n";
+    std::cout << "  -s, --style STYLE    Default suppression style: specific|nextline|block\n";
+    std::cout << "                       (default: specific)\n";
+    std::cout << "  -n, --non-interactive Apply default style to all warnings without prompting\n";
+    std::cout << "  --dry-run            Show what would be changed without modifying files\n";
+    std::cout << "  --force              Allow file modifications when input is piped (unsafe)\n";
+    std::cout << "  -h, --help           Show this help message\n\n";
+    std::cout << "EXAMPLES:\n";
+    std::cout << "  " << program_name << " --input tidy_output.txt\n";
     std::cout << "  clang-tidy src/*.cpp | " << program_name << "\n";
-    std::cout << "  " << program_name << " --input warnings.txt\n";
+    std::cout << "  " << program_name << " --style nextline --non-interactive < warnings.txt\n";
 }
 
-auto main(int argc, char* argv[]) -> int {
-    std::string input_file;
+auto parse_style(const std::string& style_str) -> std::optional<nolint::NolintStyle> {
+    if (style_str == "specific")
+        return nolint::NolintStyle::NOLINT_SPECIFIC;
+    if (style_str == "nextline")
+        return nolint::NolintStyle::NOLINTNEXTLINE;
+    if (style_str == "block")
+        return nolint::NolintStyle::NOLINT_BLOCK;
+    return std::nullopt;
+}
 
-    // Parse command line arguments
+auto parse_args(int argc, char** argv) -> std::optional<nolint::AppConfig> {
+    nolint::AppConfig config;
+
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
-        if (arg == "--help" || arg == "-h") {
+        if (arg == "-h" || arg == "--help") {
             print_usage(argv[0]);
-            return 0;
-        } else if (arg == "--input") {
+            return std::nullopt;
+        } else if (arg == "-i" || arg == "--input") {
             if (i + 1 >= argc) {
-                std::cerr << "Error: --input requires a filename\n";
-                return 1;
+                std::cerr << "Error: " << arg << " requires a filename\n";
+                return std::nullopt;
             }
-            input_file = argv[++i];
+            config.input_file = argv[++i];
+        } else if (arg == "-s" || arg == "--style") {
+            if (i + 1 >= argc) {
+                std::cerr << "Error: " << arg << " requires a style\n";
+                return std::nullopt;
+            }
+            auto style = parse_style(argv[++i]);
+            if (!style.has_value()) {
+                std::cerr << "Error: Invalid style. Must be: specific, nextline, or block\n";
+                return std::nullopt;
+            }
+            config.default_style = style.value();
+        } else if (arg == "-n" || arg == "--non-interactive") {
+            config.interactive = false;
+        } else if (arg == "--dry-run") {
+            config.dry_run = true;
+        } else if (arg == "--force") {
+            config.force = true;
         } else {
             std::cerr << "Error: Unknown option " << arg << "\n";
-            print_usage(argv[0]);
-            return 1;
+            std::cerr << "Use --help for usage information.\n";
+            return std::nullopt;
         }
     }
 
-    try {
-        // Create components
-        auto parser = std::make_unique<WarningParser>();
-        auto file_system = std::make_unique<FileSystem>();
-        auto file_manager = std::make_unique<FileManager>(std::move(file_system));
-        auto ui = std::make_unique<SimpleUI>();
+    return config;
+}
 
-        // Create processor
-        NolintProcessor processor(std::move(parser), std::move(file_manager), std::move(ui));
+} // anonymous namespace
 
-        // Process warnings
-        if (input_file.empty()) {
-            // Read from stdin
-            std::cout << "Reading clang-tidy warnings from stdin...\n";
-            processor.process_warnings(std::cin);
-        } else {
-            // Read from file
-            std::ifstream file(input_file);
-            if (!file.is_open()) {
-                std::cerr << "Error: Cannot open input file: " << input_file << "\n";
-                return 1;
-            }
-
-            std::cout << "Reading clang-tidy warnings from " << input_file << "...\n";
-            processor.process_warnings(file);
-        }
-
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
+int main(int argc, char** argv) {
+    auto config = parse_args(argc, argv);
+    if (!config.has_value()) {
         return 1;
     }
 
-    return 0;
+    // Create dependencies
+    auto parser = std::make_unique<nolint::ClangTidyParser>();
+    auto filesystem = std::make_unique<nolint::FileSystem>();
+    auto terminal = std::make_unique<nolint::Terminal>();
+
+    // Create and run application
+    nolint::NolintApp app(std::move(parser), std::move(filesystem), std::move(terminal));
+
+    return app.run(config.value());
 }

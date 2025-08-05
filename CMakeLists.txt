@@ -1,95 +1,79 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.20)
 project(nolint VERSION 1.0.0 LANGUAGES CXX)
 
+# C++20 requirement
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Compiler-specific options
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# Find required packages
+find_package(PkgConfig QUIET)
+
+# Google Test
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        v1.14.0
+)
+FetchContent_MakeAvailable(googletest)
+include(GoogleTest)
+
+# Include directories
+include_directories(include)
 
 # Source files
-set(SOURCE_FILES
-    src/main.cpp
+set(NOLINT_SOURCES
+    src/functional_core.cpp
     src/warning_parser.cpp
-    src/file_manager.cpp
-    src/simple_ui.cpp
-    src/context_builder.cpp
-    src/nolint_processor.cpp
-    src/string_utils.cpp
-)
-
-set(HEADER_FILES
-    include/nolint/warning_parser.hpp
-    include/nolint/file_manager.hpp
-    include/nolint/simple_ui.hpp
-    include/nolint/context_builder.hpp
-    include/nolint/nolint_processor.hpp
-    include/nolint/interfaces.hpp
-    include/nolint/types.hpp
-    include/nolint/string_utils.hpp
+    src/nolint_app.cpp
 )
 
 # Main executable
-add_executable(nolint ${SOURCE_FILES})
-target_include_directories(nolint PRIVATE include)
-
-# Testing
-enable_testing()
-find_package(GTest REQUIRED)
-
-# Test source files (excluding main.cpp)
-set(TEST_SOURCE_FILES
-    src/warning_parser.cpp
-    src/file_manager.cpp
-    src/simple_ui.cpp
-    src/context_builder.cpp
-    src/nolint_processor.cpp
-    src/string_utils.cpp
+add_executable(nolint 
+    src/main.cpp 
+    ${NOLINT_SOURCES}
 )
 
-set(TEST_FILES
-    tests/test_file_manager.cpp
+# Test executable
+add_executable(nolint_tests
+    tests/test_main.cpp
+    tests/functional_core_test.cpp
+    tests/warning_parser_test.cpp
+    tests/real_output_test.cpp
+    tests/ui_integration_test.cpp
+    ${NOLINT_SOURCES}
 )
 
-add_executable(nolint_tests ${TEST_FILES} ${TEST_SOURCE_FILES})
-target_include_directories(nolint_tests PRIVATE include)
-target_link_libraries(nolint_tests GTest::gtest GTest::gmock GTest::gtest_main)
-target_compile_definitions(nolint_tests PRIVATE UNIT_TEST)
+target_link_libraries(nolint_tests 
+    PRIVATE 
+    GTest::gtest 
+    GTest::gmock 
+    GTest::gtest_main
+)
 
-# All source and header files for formatting/linting
-set(ALL_SOURCE_FILES ${SOURCE_FILES} ${HEADER_FILES} ${TEST_FILES})
+# Discover tests
+gtest_discover_tests(nolint_tests)
 
-# Format target
+# Custom targets for development workflow
 add_custom_target(format
-    COMMAND clang-format -i ${ALL_SOURCE_FILES}
+    COMMAND clang-format -i src/*.cpp include/*.hpp tests/*.cpp
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Running clang-format on all source files"
+    COMMENT "Formatting code with clang-format"
 )
 
-# Tidy target
 add_custom_target(tidy
-    COMMAND clang-tidy ${SOURCE_FILES} -- -I${CMAKE_SOURCE_DIR}/include -std=c++20
+    COMMAND clang-tidy src/*.cpp -- -std=c++20 -I${CMAKE_SOURCE_DIR}/include
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Running clang-tidy on source files"
+    COMMENT "Running clang-tidy"
+    DEPENDS nolint
 )
 
-# Check format target (doesn't modify files)
-add_custom_target(check-format
-    COMMAND clang-format --dry-run --Werror ${ALL_SOURCE_FILES}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Checking code formatting"
-)
-
-# Custom targets that run before build
-if(RUN_CLANG_FORMAT)
-    add_custom_target(pre-build-format
-        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target format
-    )
-    add_dependencies(nolint pre-build-format)
-endif()
-
-# Installation
-install(TARGETS nolint
-    RUNTIME DESTINATION bin
-)
-
-# Add test
-add_test(NAME nolint_tests COMMAND nolint_tests)
+# Make format run before build
+add_dependencies(nolint format)
+add_dependencies(nolint_tests format)
