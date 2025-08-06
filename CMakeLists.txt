@@ -9,6 +9,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Compiler-specific options
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
+    
+    # Suppress false positive warnings from Google Test with GCC 12+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "12.0")
+        add_compile_options(-Wno-restrict)
+    endif()
 endif()
 
 # Find required packages
@@ -53,6 +58,7 @@ add_executable(nolint_tests
     tests/warning_parser_test.cpp
     tests/real_output_test.cpp
     tests/ui_integration_test.cpp
+    tests/nolint_app_test.cpp
     ${NOLINT_SOURCES}
 )
 
