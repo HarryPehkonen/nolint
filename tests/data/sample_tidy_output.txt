@@ -1,0 +1,1007 @@
+[100%] Running clang-tidy on source files
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:13:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   13 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:20:29: warning: 50 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   20 |         for (int i = 0; i < 50; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:42:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   42 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:49:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   49 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:68:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   68 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:71:40: warning: 30 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   71 |             {"age", jsom::JsonDocument(30)},
+      |                                        ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:72:43: warning: 75000.50 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   72 |             {"salary", jsom::JsonDocument(75000.50)},
+      |                                           ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:77:71: warning: 12345 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   77 |                                            {"zip", jsom::JsonDocument(12345)}}}};
+      |                                                                       ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:89:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   89 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:93:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   93 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:102:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  102 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:107:29: warning: 50 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  107 |         for (int i = 0; i < 50; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:128:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  128 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:133:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  133 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:151:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  151 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:153:39: warning: 30 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  153 |                               {"age", 30},
+      |                                       ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:154:42: warning: 75000.50 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  154 |                               {"salary", 75000.50},
+      |                                          ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:157:79: warning: 12345 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  157 |                               {"address", {{"street", "123 Main St"}, {"zip", 12345}}}};
+      |                                                                               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:168:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  168 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_dom_access_compat.cpp:172:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+  172 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:10:5: warning: 'auto json' can be declared as 'const auto *json' [readability-qualified-auto]
+   10 |     auto json = R"({
+      |     ^~~~
+      |     const auto *
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:19:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   19 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:26:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   26 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:32:5: warning: 'auto json' can be declared as 'const auto *json' [readability-qualified-auto]
+   32 |     auto json = R"({
+      |     ^~~~
+      |     const auto *
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:40:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   40 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:54:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   54 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:60:5: warning: 'auto json' can be declared as 'const auto *json' [readability-qualified-auto]
+   60 |     auto json = R"({
+      |     ^~~~
+      |     const auto *
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:69:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   69 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:75:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   75 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:81:5: warning: 'auto json' can be declared as 'const auto *json' [readability-qualified-auto]
+   81 |     auto json = R"({
+      |     ^~~~
+      |     const auto *
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:88:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   88 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:101:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+  101 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:107:5: warning: 'auto json' can be declared as 'const auto *json' [readability-qualified-auto]
+  107 |     auto json = R"({
+      |     ^~~~
+      |     const auto *
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:114:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  114 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:118:14: warning: variable name 'pi' is too short, expected at least 3 characters [readability-identifier-length]
+  118 |         auto pi = doc["pi"].as<double>();
+      |              ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:119:14: warning: variable name 'e' is too short, expected at least 3 characters [readability-identifier-length]
+  119 |         auto e = doc["e"].as<double>();
+      |              ^
+/home/user/project/benchmarks/benchmark_format_preservation.cpp:127:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+  127 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:13:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   13 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:22:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   22 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:23:18: warning: variable name 'id' is too short, expected at least 3 characters [readability-identifier-length]
+   23 |             auto id = doc["data"][i]["id"].as<int>();
+      |                  ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:44:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   44 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:46:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   46 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:70:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   70 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:72:33: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   72 |         for (int rep = 0; rep < 100; ++rep) {
+      |                                 ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:88:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   88 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:108:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  108 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:113:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  113 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:114:18: warning: variable name 'id' is too short, expected at least 3 characters [readability-identifier-length]
+  114 |             auto id = doc["data"][i]["id"].get<int>();
+      |                  ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:135:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  135 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_lazy_evaluation.cpp:136:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  136 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_main.cpp:3:5: warning: use a trailing return type for this function [modernize-use-trailing-return-type]
+    3 | int main(int argc, char** argv) {
+      | ~~~ ^
+      | auto                            -> int
+/home/user/project/benchmarks/benchmark_main.cpp:5:62: warning: statement should be inside braces [readability-braces-around-statements]
+    5 |     if (::benchmark::ReportUnrecognizedArguments(argc, argv))
+      |                                                              ^
+      |                                                               {
+    6 |         return 1;
+      |                  
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:19:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   19 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:30:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   30 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:36:5: warning: 'auto json' can be declared as 'const auto *json' [readability-qualified-auto]
+   36 |     auto json = R"({
+      |     ^~~~
+      |     const auto *
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:43:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   43 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:46:14: warning: variable name 'id' is too short, expected at least 3 characters [readability-identifier-length]
+   46 |         auto id = doc["id"].as<long long>();
+      |              ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:53:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   53 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:61:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   61 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:63:22: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   63 |         docs.reserve(100);
+      |                      ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:66:29: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   66 |         for (int i = 0; i < 100; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:71:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   71 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:72:18: warning: variable name 'id' is too short, expected at least 3 characters [readability-identifier-length]
+   72 |             auto id = docs[i]["id"].as<long long>();
+      |                  ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:78:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   78 |     state.SetBytesProcessed(state.iterations() * json.size() * 100);
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:78:64: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   78 |     state.SetBytesProcessed(state.iterations() * json.size() * 100);
+      |                                                                ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:87:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   87 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:106:5: warning: 'auto json' can be declared as 'const auto *json' [readability-qualified-auto]
+  106 |     auto json = R"({
+      |     ^~~~
+      |     const auto *
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:115:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  115 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:125:29: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+  125 |     state.SetBytesProcessed(state.iterations() * strlen(json));
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:132:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  132 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:134:22: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  134 |         docs.reserve(100);
+      |                      ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:136:29: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  136 |         for (int i = 0; i < 100; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:140:29: warning: 10 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  140 |         for (int i = 0; i < 10; ++i) {
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:141:18: warning: variable name 'id' is too short, expected at least 3 characters [readability-identifier-length]
+  141 |             auto id = docs[i]["id"].get<long long>();
+      |                  ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:147:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+  147 |     state.SetBytesProcessed(state.iterations() * json.size() * 100);
+      |                             ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:147:64: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  147 |     state.SetBytesProcessed(state.iterations() * json.size() * 100);
+      |                                                                ^
+/home/user/project/benchmarks/benchmark_memory_usage.cpp:155:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  155 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:9:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+    9 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:14:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   14 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:20:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   20 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:25:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   25 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:31:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   31 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:36:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   36 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:42:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   42 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:47:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   47 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:54:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   54 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:59:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   59 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:65:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   65 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:70:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   70 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:76:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   76 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:81:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   81 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:87:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   87 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parse_serialize.cpp:92:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   92 |     state.SetBytesProcessed(state.iterations() * input.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:9:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+    9 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:13:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   13 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:19:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   19 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:23:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   23 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:29:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   29 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:33:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   33 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:50:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   50 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:54:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   54 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:61:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   61 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:65:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   65 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:71:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   71 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:75:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   75 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:81:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+   81 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:85:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+   85 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:102:15: warning: variable name '_' is too short, expected at least 3 characters [readability-identifier-length]
+  102 |     for (auto _ : state) {
+      |               ^
+/home/user/project/benchmarks/benchmark_parsing_compat.cpp:106:29: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to signed type 'int64_t' (aka 'long') is implementation-defined [bugprone-narrowing-conversions]
+  106 |     state.SetBytesProcessed(state.iterations() * json.size());
+      |                             ^
+/home/user/project/include/jsom/batch_parser.hpp:24:5: warning: use '= default' to define a trivial default constructor [modernize-use-equals-default]
+   24 |     DocumentBuilder()  {}
+      |     ^                  ~~
+      |                        = default;
+/home/user/project/include/jsom/batch_parser.hpp:78:10: warning: function 'set_value_at_path' exceeds recommended size/complexity thresholds [readability-function-size]
+   78 |     void set_value_at_path(const JsonDocument& value, const std::string& path) {
+      |          ^
+/home/user/project/include/jsom/batch_parser.hpp:78:10: note: 44 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/batch_parser.hpp:124:10: warning: method 'parse_json_pointer' can be made static [readability-convert-member-functions-to-static]
+  124 |     auto parse_json_pointer(const std::string& path) -> std::vector<std::string> {
+      |          ^
+      |     static 
+/home/user/project/include/jsom/batch_parser.hpp:170:9: warning: replace loop by 'std::all_of()' [readability-use-anyofallof]
+  170 |         for (char c : str) {
+      |         ^
+/home/user/project/include/jsom/batch_parser.hpp:170:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  170 |         for (char c : str) {
+      |                   ^
+/home/user/project/include/jsom/batch_parser.hpp:185:5: warning: use '= default' to define a trivial default constructor [modernize-use-equals-default]
+  185 |     SimpleDocumentBuilder()  {}
+      |     ^                        ~~
+      |                              = default;
+/home/user/project/include/jsom/batch_parser.hpp:243:61: warning: static member accessed through instance [readability-static-accessed-through-instance]
+  243 |     events.on_error = [&builder](const ParseError& error) { builder.on_error(error); };
+      |                                                             ^~~~~~~~
+      |                                                             jsom::DocumentBuilder::
+/home/user/project/include/jsom/core_types.hpp:10:12: warning: enum 'JsonType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   10 | enum class JsonType { Null, Boolean, Number, String, Object, Array };
+      |            ^
+/home/user/project/include/jsom/core_types.hpp:50:16: warning: variable name 'd' is too short, expected at least 3 characters [readability-identifier-length]
+   50 |         double d = as_double();
+      |                ^
+/home/user/project/include/jsom/core_types.hpp:59:16: warning: variable name 'd' is too short, expected at least 3 characters [readability-identifier-length]
+   59 |         double d = as_double();
+      |                ^
+/home/user/project/include/jsom/core_types.hpp:60:18: warning: narrowing conversion from 'long long' to 'double' [bugprone-narrowing-conversions]
+   60 |         if (d != static_cast<long long>(d)) {
+      |                  ^
+/home/user/project/include/jsom/core_types.hpp:120:20: warning: variable name 'd' is too short, expected at least 3 characters [readability-identifier-length]
+  120 |             double d = as_double();
+      |                    ^
+/home/user/project/include/jsom/fast_parser.hpp:33:14: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+   33 |         char c = advance();
+      |              ^
+/home/user/project/include/jsom/fast_parser.hpp:41:10: warning: function 'parse_string' exceeds recommended size/complexity thresholds [readability-function-size]
+   41 |     auto parse_string() -> JsonDocument {
+      |          ^
+/home/user/project/include/jsom/fast_parser.hpp:41:10: note: 70 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/fast_parser.hpp:51:18: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+   51 |             char c = data_[pos_];
+      |                  ^
+/home/user/project/include/jsom/fast_parser.hpp:62:35: warning: statement should be inside braces [readability-braces-around-statements]
+   62 |                 if (pos_ >= size_)
+      |                                   ^
+      |                                    {
+   63 |                     break;
+      |                           
+/home/user/project/include/jsom/fast_parser.hpp:92:80: warning: statement should be inside braces [readability-braces-around-statements]
+   92 |                     if (pos_ + parser_constants::UNICODE_ESCAPE_LENGTH > size_)
+      |                                                                                ^
+      |                                                                                 {
+   93 |                         break;
+      |                               
+/home/user/project/include/jsom/fast_parser.hpp:122:18: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  122 |             char c = data_[pos_];
+      |                  ^
+/home/user/project/include/jsom/fast_parser.hpp:160:10: warning: function 'parse_object' exceeds recommended size/complexity thresholds [readability-function-size]
+  160 |     auto parse_object() -> JsonDocument {
+      |          ^
+/home/user/project/include/jsom/fast_parser.hpp:160:10: note: 46 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/fast_parser.hpp:192:18: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  192 |             char c = advance();
+      |                  ^
+/home/user/project/include/jsom/fast_parser.hpp:209:10: warning: function 'parse_array' exceeds recommended size/complexity thresholds [readability-function-size]
+  209 |     auto parse_array() -> JsonDocument {
+      |          ^
+/home/user/project/include/jsom/fast_parser.hpp:209:10: note: 31 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/fast_parser.hpp:226:18: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  226 |             char c = advance();
+      |                  ^
+/home/user/project/include/jsom/fast_parser.hpp:244:14: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  244 |         char c = peek();
+      |              ^
+/home/user/project/include/jsom/json_document.hpp:175:14: warning: variable name 'it' is too short, expected at least 3 characters [readability-identifier-length]
+  175 |         auto it = obj.find(key);
+      |              ^
+/home/user/project/include/jsom/json_document.hpp:185:14: warning: variable name 'it' is too short, expected at least 3 characters [readability-identifier-length]
+  185 |         auto it = obj.find(key);
+      |              ^
+/home/user/project/include/jsom/json_document.hpp:245:10: warning: method 'get_path' can be made static [readability-convert-member-functions-to-static]
+  245 |     auto get_path() const -> std::string { return get_json_pointer(); } // Alias
+      |          ^          ~~~~~
+      |     static 
+/home/user/project/include/jsom/json_document.hpp:300:10: warning: function 'serialize_compact_to_string' exceeds recommended size/complexity thresholds [readability-function-size]
+  300 |     void serialize_compact_to_string(std::string& out) const {
+      |          ^
+/home/user/project/include/jsom/json_document.hpp:300:10: note: 57 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_document.hpp:360:10: warning: function 'serialize_compact' exceeds recommended size/complexity thresholds [readability-function-size]
+  360 |     void serialize_compact(std::ostream& out) const {
+      |          ^
+/home/user/project/include/jsom/json_document.hpp:360:10: note: 48 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_document.hpp:410:10: warning: function 'serialize_to' exceeds recommended size/complexity thresholds [readability-function-size]
+  410 |     void serialize_to(std::ostream& out, bool pretty, int indent = 0) const {
+      |          ^
+/home/user/project/include/jsom/json_document.hpp:410:10: note: 63 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_document.hpp:435:48: warning: performing an implicit widening conversion to type 'size_type' (aka 'unsigned long') of a multiplication performed in type 'int' [bugprone-implicit-widening-of-multiplication-result]
+  435 |                     out << '\n' << std::string((indent + 1) * 2, ' ');
+      |                                                ^
+/home/user/project/include/jsom/json_document.hpp:435:48: note: make conversion explicit to silence this warning
+    5 |                     out << '\n' << std::string((indent + 1) * 2, ' ');
+      |                                                ^~~~~~~~~~~~~~~~
+      |                                                static_cast<size_type>( )
+/home/user/project/include/jsom/json_document.hpp:435:48: note: perform multiplication in a wider type
+  435 |                     out << '\n' << std::string((indent + 1) * 2, ' ');
+      |                                                ^~~~~~~~~~~
+      |                                                 static_cast<long>( )
+/home/user/project/include/jsom/json_document.hpp:447:44: warning: performing an implicit widening conversion to type 'size_type' (aka 'unsigned long') of a multiplication performed in type 'int' [bugprone-implicit-widening-of-multiplication-result]
+  447 |                 out << '\n' << std::string(indent * 2, ' ');
+      |                                            ^
+/home/user/project/include/jsom/json_document.hpp:447:44: note: make conversion explicit to silence this warning
+  447 |                 out << '\n' << std::string(indent * 2, ' ');
+      |                                            ^~~~~~~~~~
+      |                                            static_cast<size_type>( )
+/home/user/project/include/jsom/json_document.hpp:447:44: note: perform multiplication in a wider type
+  447 |                 out << '\n' << std::string(indent * 2, ' ');
+      |                                            ^~~~~~
+      |                                            static_cast<long>( )
+/home/user/project/include/jsom/json_document.hpp:461:48: warning: performing an implicit widening conversion to type 'size_type' (aka 'unsigned long') of a multiplication performed in type 'int' [bugprone-implicit-widening-of-multiplication-result]
+  461 |                     out << '\n' << std::string((indent + 1) * 2, ' ');
+      |                                                ^
+/home/user/project/include/jsom/json_document.hpp:461:48: note: make conversion explicit to silence this warning
+  461 |                     out << '\n' << std::string((indent + 1) * 2, ' ');
+      |                                                ^~~~~~~~~~~~~~~~
+      |                                                static_cast<size_type>( )
+/home/user/project/include/jsom/json_document.hpp:461:48: note: perform multiplication in a wider type
+  461 |                     out << '\n' << std::string((indent + 1) * 2, ' ');
+      |                                                ^~~~~~~~~~~
+      |                                                 static_cast<long>( )
+/home/user/project/include/jsom/json_document.hpp:467:44: warning: performing an implicit widening conversion to type 'size_type' (aka 'unsigned long') of a multiplication performed in type 'int' [bugprone-implicit-widening-of-multiplication-result]
+  467 |                 out << '\n' << std::string(indent * 2, ' ');
+      |                                            ^
+/home/user/project/include/jsom/json_document.hpp:467:44: note: make conversion explicit to silence this warning
+  467 |                 out << '\n' << std::string(indent * 2, ' ');
+      |                                            ^~~~~~~~~~
+      |                                            static_cast<size_type>( )
+/home/user/project/include/jsom/json_document.hpp:467:44: note: perform multiplication in a wider type
+  467 |                 out << '\n' << std::string(indent * 2, ' ');
+      |                                            ^~~~~~
+      |                                            static_cast<long>( )
+/home/user/project/include/jsom/json_document.hpp:475:17: warning: function 'escape_string_to_string' exceeds recommended size/complexity thresholds [readability-function-size]
+  475 |     static void escape_string_to_string(std::string& out, const std::string& str) {
+      |                 ^
+/home/user/project/include/jsom/json_document.hpp:475:17: note: 51 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_document.hpp:478:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  478 |         for (char c : str) {
+      |                   ^
+/home/user/project/include/jsom/json_document.hpp:479:74: warning: 0x20 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  479 |             if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 0x20) {
+      |                                                                          ^
+/home/user/project/include/jsom/json_document.hpp:492:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  492 |         for (char c : str) {
+      |                   ^
+/home/user/project/include/jsom/json_document.hpp:516:53: warning: 0x20 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  516 |                 if (static_cast<unsigned char>(c) < 0x20) {
+      |                                                     ^
+/home/user/project/include/jsom/json_document.hpp:517:21: warning: do not declare C-style arrays, use std::array<> instead [modernize-avoid-c-arrays]
+  517 |                     char buf[7];
+      |                     ^
+/home/user/project/include/jsom/json_document.hpp:517:30: warning: 7 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  517 |                     char buf[7];
+      |                              ^
+/home/user/project/include/jsom/json_document.hpp:528:17: warning: function 'escape_string' exceeds recommended size/complexity thresholds [readability-function-size]
+  528 |     static void escape_string(std::ostream& out, const std::string& str) {
+      |                 ^
+/home/user/project/include/jsom/json_document.hpp:528:17: note: 50 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_document.hpp:531:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  531 |         for (char c : str) {
+      |                   ^
+/home/user/project/include/jsom/json_document.hpp:532:74: warning: 0x20 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  532 |             if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 0x20) {
+      |                                                                          ^
+/home/user/project/include/jsom/json_document.hpp:545:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  545 |         for (char c : str) {
+      |                   ^
+/home/user/project/include/jsom/json_document.hpp:569:53: warning: 0x20 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  569 |                 if (static_cast<unsigned char>(c) < 0x20) {
+      |                                                     ^
+/home/user/project/include/jsom/json_formatter.hpp:62:10: warning: function 'format_string' exceeds recommended size/complexity thresholds [readability-function-size]
+   62 |     void format_string(std::ostringstream& oss, const std::string& str) const {
+      |          ^
+/home/user/project/include/jsom/json_formatter.hpp:62:10: note: 36 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_formatter.hpp:64:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+   64 |         for (char c : str) {
+      |                   ^
+/home/user/project/include/jsom/json_formatter.hpp:100:10: warning: function 'format_array' has cognitive complexity of 50 (threshold 30) [readability-function-cognitive-complexity]
+  100 |     void format_array(std::ostringstream& oss, const JsonDocument& doc, int depth) const {
+      |          ^
+/home/user/project/include/jsom/json_formatter.hpp:103:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  103 |         if (arr.empty()) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:104:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  104 |             if (options_.bracket_spacing) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:106:15: note: +1, nesting level increased to 2
+  106 |             } else {
+      |               ^
+/home/user/project/include/jsom/json_formatter.hpp:116:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  116 |         if (options_.intelligent_wrapping && contains_only_simple_values(arr)
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:117:13: note: +1
+  117 |             && static_cast<int>(arr.size()) > options_.max_inline_array_size) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:123:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  123 |         if (options_.max_line_width > 0 && should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:123:41: note: +1
+  123 |         if (options_.max_line_width > 0 && should_inline) {
+      |                                         ^
+/home/user/project/include/jsom/json_formatter.hpp:125:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  125 |             if (!fits_on_line) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:131:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  131 |         if (options_.bracket_spacing && should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:131:38: note: +1
+  131 |         if (options_.bracket_spacing && should_inline) {
+      |                                      ^
+/home/user/project/include/jsom/json_formatter.hpp:135:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  135 |         if (should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:137:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  137 |             if (options_.max_line_width > 0) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:139:15: note: +1, nesting level increased to 2
+  139 |             } else {
+      |               ^
+/home/user/project/include/jsom/json_formatter.hpp:141:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  141 |                 for (size_t i = 0; i < arr.size(); ++i) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:142:21: note: +4, including nesting penalty of 3, nesting level increased to 4
+  142 |                     if (i > 0) {
+      |                     ^
+/home/user/project/include/jsom/json_formatter.hpp:148:11: note: +1, nesting level increased to 1
+  148 |         } else {
+      |           ^
+/home/user/project/include/jsom/json_formatter.hpp:150:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  150 |             if (use_intelligent_wrapping) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:152:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  152 |                 if (options_.indent_size.has_value()) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:156:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  156 |                 if (options_.indent_size.has_value()) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:159:15: note: +1, nesting level increased to 2
+  159 |             } else {
+      |               ^
+/home/user/project/include/jsom/json_formatter.hpp:161:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  161 |                 for (size_t i = 0; i < arr.size(); ++i) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:162:21: note: +4, including nesting penalty of 3, nesting level increased to 4
+  162 |                     if (options_.indent_size.has_value()) {
+      |                     ^
+/home/user/project/include/jsom/json_formatter.hpp:166:21: note: +4, including nesting penalty of 3, nesting level increased to 4
+  166 |                     if (i < arr.size() - 1) {
+      |                     ^
+/home/user/project/include/jsom/json_formatter.hpp:168:28: note: +1, nesting level increased to 4
+  168 |                     } else if (options_.trailing_comma) {
+      |                            ^
+/home/user/project/include/jsom/json_formatter.hpp:172:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  172 |                 if (options_.indent_size.has_value()) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:178:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  178 |         if (options_.bracket_spacing && should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:178:38: note: +1
+  178 |         if (options_.bracket_spacing && should_inline) {
+      |                                      ^
+/home/user/project/include/jsom/json_formatter.hpp:100:10: warning: function 'format_array' exceeds recommended size/complexity thresholds [readability-function-size]
+  100 |     void format_array(std::ostringstream& oss, const JsonDocument& doc, int depth) const {
+      |          ^
+/home/user/project/include/jsom/json_formatter.hpp:100:10: note: 82 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_formatter.hpp:166:45: warning: repeated branch body in conditional chain [bugprone-branch-clone]
+  166 |                     if (i < arr.size() - 1) {
+      |                                             ^
+/home/user/project/include/jsom/json_formatter.hpp:168:22: note: end of the original
+  168 |                     } else if (options_.trailing_comma) {
+      |                      ^
+/home/user/project/include/jsom/json_formatter.hpp:168:57: note: clone 1 starts here
+  168 |                     } else if (options_.trailing_comma) {
+      |                                                         ^
+/home/user/project/include/jsom/json_formatter.hpp:184:10: warning: function 'format_object' has cognitive complexity of 39 (threshold 30) [readability-function-cognitive-complexity]
+  184 |     void format_object(std::ostringstream& oss, const JsonDocument& doc, int depth) const {
+      |          ^
+/home/user/project/include/jsom/json_formatter.hpp:187:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  187 |         if (obj.empty()) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:188:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  188 |             if (options_.bracket_spacing) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:190:15: note: +1, nesting level increased to 2
+  190 |             } else {
+      |               ^
+/home/user/project/include/jsom/json_formatter.hpp:201:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  201 |         for (const auto& pair : obj) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:205:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  205 |         if (options_.sort_keys) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:211:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  211 |         if (options_.align_values && !should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:211:35: note: +1
+  211 |         if (options_.align_values && !should_inline) {
+      |                                   ^
+/home/user/project/include/jsom/json_formatter.hpp:212:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  212 |             for (const auto& key : keys) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:214:73: note: +3, including nesting penalty of 2, nesting level increased to 3
+  214 |                 size_t key_length = key.length() + (options_.quote_keys ? character_constants::INDENT_MULTIPLIER : 0);
+      |                                                                         ^
+/home/user/project/include/jsom/json_formatter.hpp:220:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  220 |         if (options_.bracket_spacing && should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:220:38: note: +1
+  220 |         if (options_.bracket_spacing && should_inline) {
+      |                                      ^
+/home/user/project/include/jsom/json_formatter.hpp:224:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  224 |         if (should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:226:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  226 |             for (size_t i = 0; i < keys.size(); ++i) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:227:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  227 |                 if (i > 0) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:234:11: note: +1, nesting level increased to 1
+  234 |         } else {
+      |           ^
+/home/user/project/include/jsom/json_formatter.hpp:236:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  236 |             for (size_t i = 0; i < keys.size(); ++i) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:237:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  237 |                 if (options_.indent_size.has_value()) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:248:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  248 |                 if (options_.align_values && max_key_width > formatted_key.length()) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:248:43: note: +1
+  248 |                 if (options_.align_values && max_key_width > formatted_key.length()) {
+      |                                           ^
+/home/user/project/include/jsom/json_formatter.hpp:255:17: note: +3, including nesting penalty of 2, nesting level increased to 3
+  255 |                 if (i < keys.size() - 1) {
+      |                 ^
+/home/user/project/include/jsom/json_formatter.hpp:257:24: note: +1, nesting level increased to 3
+  257 |                 } else if (options_.trailing_comma) {
+      |                        ^
+/home/user/project/include/jsom/json_formatter.hpp:261:13: note: +2, including nesting penalty of 1, nesting level increased to 2
+  261 |             if (options_.indent_size.has_value()) {
+      |             ^
+/home/user/project/include/jsom/json_formatter.hpp:266:9: note: +1, including nesting penalty of 0, nesting level increased to 1
+  266 |         if (options_.bracket_spacing && should_inline) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:266:38: note: +1
+  266 |         if (options_.bracket_spacing && should_inline) {
+      |                                      ^
+/home/user/project/include/jsom/json_formatter.hpp:184:10: warning: function 'format_object' exceeds recommended size/complexity thresholds [readability-function-size]
+  184 |     void format_object(std::ostringstream& oss, const JsonDocument& doc, int depth) const {
+      |          ^
+/home/user/project/include/jsom/json_formatter.hpp:184:10: note: 86 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_formatter.hpp:255:42: warning: repeated branch body in conditional chain [bugprone-branch-clone]
+  255 |                 if (i < keys.size() - 1) {
+      |                                          ^
+/home/user/project/include/jsom/json_formatter.hpp:257:18: note: end of the original
+  257 |                 } else if (options_.trailing_comma) {
+      |                  ^
+/home/user/project/include/jsom/json_formatter.hpp:257:53: note: clone 1 starts here
+  257 |                 } else if (options_.trailing_comma) {
+      |                                                     ^
+/home/user/project/include/jsom/json_formatter.hpp:319:10: warning: function 'format_array_with_intelligent_multiline_wrapping' exceeds recommended size/complexity thresholds [readability-function-size]
+  319 |     void format_array_with_intelligent_multiline_wrapping(std::ostringstream& oss,
+      |          ^
+/home/user/project/include/jsom/json_formatter.hpp:319:10: note: 58 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_formatter.hpp:381:10: warning: function 'format_array_with_intelligent_wrapping' exceeds recommended size/complexity thresholds [readability-function-size]
+  381 |     void format_array_with_intelligent_wrapping(std::ostringstream& oss,
+      |          ^
+/home/user/project/include/jsom/json_formatter.hpp:381:10: note: 65 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/json_formatter.hpp:407:27: warning: variable name 'i' is too short, expected at least 3 characters [readability-identifier-length]
+  407 |         for (const auto & i : arr) {
+      |                           ^
+/home/user/project/include/jsom/json_formatter.hpp:450:31: warning: use a trailing return type for this function [modernize-use-trailing-return-type]
+  450 |     [[nodiscard]] static bool contains_only_simple_values(const std::vector<JsonDocument>& arr) {
+      |                          ~~~~ ^
+      |                          auto                                                                   -> bool
+/home/user/project/include/jsom/json_formatter.hpp:451:9: warning: replace loop by 'std::all_of()' [readability-use-anyofallof]
+  451 |         for (const auto& item : arr) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:488:9: warning: replace loop by 'std::all_of()' [readability-use-anyofallof]
+  488 |         for (const auto& pair : obj) {
+      |         ^
+/home/user/project/include/jsom/json_formatter.hpp:498:16: warning: avoid repeating the return type from the declaration; use a braced initializer list instead [modernize-return-braced-init-list]
+  498 |         return std::string(depth * options_.indent_size.value_or(0), ' ');
+      |                ^
+/home/user/project/include/jsom/json_formatter.hpp:498:28: warning: performing an implicit widening conversion to type 'size_type' (aka 'unsigned long') of a multiplication performed in type 'int' [bugprone-implicit-widening-of-multiplication-result]
+  498 |         return std::string(depth * options_.indent_size.value_or(0), ' ');
+      |                            ^
+/home/user/project/include/jsom/json_formatter.hpp:498:28: note: make conversion explicit to silence this warning
+    7 |         return std::string(depth * options_.indent_size.value_or(0), ' ');
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                            static_cast<size_type>(                 )
+/home/user/project/include/jsom/json_formatter.hpp:498:28: note: perform multiplication in a wider type
+  498 |         return std::string(depth * options_.indent_size.value_or(0), ' ');
+      |                            ^~~~~
+      |                            static_cast<long>( )
+/home/user/project/include/jsom/json_pointer.hpp:64:18: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+   64 |             char c = pointer[i];
+      |                  ^
+/home/user/project/include/jsom/json_pointer.hpp:102:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  102 |         for (char c : segment) {
+      |                   ^
+/home/user/project/include/jsom/json_pointer.hpp:168:36: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  168 |                            [](char c) { return c >= '0' && c <= '9'; });
+      |                                    ^
+/home/user/project/include/jsom/navigation_engine.hpp:18:5: warning: use '= default' to define a trivial default constructor [modernize-use-equals-default]
+   18 |     NavigationResult()  {}
+      |     ^                   ~~
+      |                         = default;
+/home/user/project/include/jsom/navigation_engine.hpp:89:5: warning: function 'navigate_multiple' exceeds recommended size/complexity thresholds [readability-function-size]
+   89 |     navigate_multiple(JsonDocument* root, const std::vector<std::string>& paths, PathCache& cache) -> std::vector<JsonDocument*> {
+      |     ^
+/home/user/project/include/jsom/navigation_engine.hpp:89:5: note: 32 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/navigation_engine.hpp:102:34: warning: parameter name 'a' is too short, expected at least 3 characters [readability-identifier-length]
+  102 |                   [](const auto& a, const auto& b) { return a.first < b.first; });
+      |                                  ^
+/home/user/project/include/jsom/navigation_engine.hpp:102:49: warning: parameter name 'b' is too short, expected at least 3 characters [readability-identifier-length]
+  102 |                   [](const auto& a, const auto& b) { return a.first < b.first; });
+      |                                                 ^
+/home/user/project/include/jsom/navigation_engine.hpp:125:17: warning: function 'navigate_and_cache_intermediate' exceeds recommended size/complexity thresholds [readability-function-size]
+  125 |     static auto navigate_and_cache_intermediate(JsonDocument* start_node,
+      |                 ^
+/home/user/project/include/jsom/navigation_engine.hpp:125:17: note: 52 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/navigation_engine.hpp:183:17: warning: function 'navigate_single_step' exceeds recommended size/complexity thresholds [readability-function-size]
+  183 |     static auto navigate_single_step(JsonDocument* current, const std::string& segment) -> JsonDocument* {
+      |                 ^
+/home/user/project/include/jsom/navigation_engine.hpp:183:17: note: 37 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/navigation_engine.hpp:192:22: warning: variable name 'it' is too short, expected at least 3 characters [readability-identifier-length]
+  192 |                 auto it = obj.find(segment);
+      |                      ^
+/home/user/project/include/jsom/navigation_engine.hpp:213:15: warning: do not use 'else' after 'return' [readability-else-after-return]
+  213 |             } else {
+      |               ^~~~~~
+  214 |                 // Cannot navigate into primitive types
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  215 |                 return nullptr;
+      |                 ~~~~~~~~~~~~~~~
+  216 |             }
+      |             ~
+/home/user/project/include/jsom/path_cache.hpp:63:14: warning: variable name 'it' is too short, expected at least 3 characters [readability-identifier-length]
+   63 |         auto it = exact_cache_.find(path);
+      |              ^
+/home/user/project/include/jsom/path_cache.hpp:89:10: warning: function 'find_best_prefix' exceeds recommended size/complexity thresholds [readability-function-size]
+   89 |     auto find_best_prefix(const std::string& path) const -> std::pair<JsonDocument*, std::string> {
+      |          ^
+/home/user/project/include/jsom/path_cache.hpp:89:10: note: 33 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/path_cache.hpp:93:22: warning: variable name 'it' is too short, expected at least 3 characters [readability-identifier-length]
+   93 |                 auto it = prefix_cache_.find(prefix);
+      |                      ^
+/home/user/project/include/jsom/path_cache.hpp:180:75: warning: narrowing conversion from 'size_type' (aka 'unsigned long') to 'double' [bugprone-narrowing-conversions]
+  180 |             stats.avg_prefix_length = static_cast<double>(total_length) / prefix_cache_.size();
+      |                                                                           ^
+/home/user/project/include/jsom/path_cache.hpp:221:38: warning: parameter name 'a' is too short, expected at least 3 characters [readability-identifier-length]
+  221 |                       [](const auto& a, const auto& b) { return a.second < b.second; });
+      |                                      ^
+/home/user/project/include/jsom/path_cache.hpp:221:53: warning: parameter name 'b' is too short, expected at least 3 characters [readability-identifier-length]
+  221 |                       [](const auto& a, const auto& b) { return a.second < b.second; });
+      |                                                     ^
+/home/user/project/include/jsom/path_cache.hpp:234:14: warning: variable name 'it' is too short, expected at least 3 characters [readability-identifier-length]
+  234 |         auto it = std::find(recent_prefixes_.begin(), recent_prefixes_.end(), prefix);
+      |              ^
+/home/user/project/include/jsom/path_node.hpp:10:12: warning: enum 'ContainerType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   10 | enum class ContainerType { Object, Array };
+      |            ^
+/home/user/project/include/jsom/path_node.hpp:70:14: warning: variable name 'it' is too short, expected at least 3 characters [readability-identifier-length]
+   70 |         auto it = object_children_.find(key);
+      |              ^
+/home/user/project/include/jsom/path_node.hpp:113:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  113 |         for (char c : str) {
+      |                   ^
+/home/user/project/include/jsom/streaming_parser.hpp:11:12: warning: enum 'ParseState' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   11 | enum class ParseState {
+      |            ^
+/home/user/project/include/jsom/streaming_parser.hpp:29:45: warning: parameter name 't' is too short, expected at least 3 characters [readability-identifier-length]
+   29 |     ParseContext(PathNode* n, ContainerType t, bool key = false, std::size_t idx = 0)
+      |                                             ^
+/home/user/project/include/jsom/streaming_parser.hpp:63:10: warning: function 'feed_character' exceeds recommended size/complexity thresholds [readability-function-size]
+   63 |     void feed_character(char c) {
+      |          ^
+/home/user/project/include/jsom/streaming_parser.hpp:63:10: note: 36 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/streaming_parser.hpp:63:30: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+   63 |     void feed_character(char c) {
+      |                              ^
+/home/user/project/include/jsom/streaming_parser.hpp:102:19: warning: variable name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  102 |         for (char c : json) {
+      |                   ^
+/home/user/project/include/jsom/streaming_parser.hpp:121:10: warning: function 'handle_start' exceeds recommended size/complexity thresholds [readability-function-size]
+  121 |     void handle_start(char c) {
+      |          ^
+/home/user/project/include/jsom/streaming_parser.hpp:121:10: note: 37 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/streaming_parser.hpp:121:28: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  121 |     void handle_start(char c) {
+      |                            ^
+/home/user/project/include/jsom/streaming_parser.hpp:160:32: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  160 |     void handle_in_string(char c) {
+      |                                ^
+/home/user/project/include/jsom/streaming_parser.hpp:170:10: warning: function 'handle_string_escape' exceeds recommended size/complexity thresholds [readability-function-size]
+  170 |     void handle_string_escape(char c) {
+      |          ^
+/home/user/project/include/jsom/streaming_parser.hpp:170:10: note: 34 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/streaming_parser.hpp:170:36: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  170 |     void handle_string_escape(char c) {
+      |                                    ^
+/home/user/project/include/jsom/streaming_parser.hpp:206:32: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  206 |     void handle_in_number(char c) {
+      |                                ^
+/home/user/project/include/jsom/streaming_parser.hpp:215:33: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  215 |     void handle_in_literal(char c) {
+      |                                 ^
+/home/user/project/include/jsom/streaming_parser.hpp:224:38: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  224 |     void handle_expecting_colon(char c) {
+      |                                      ^
+/home/user/project/include/jsom/streaming_parser.hpp:236:10: warning: function 'handle_expecting_comma_or_end' exceeds recommended size/complexity thresholds [readability-function-size]
+  236 |     void handle_expecting_comma_or_end(char c) {
+      |          ^
+/home/user/project/include/jsom/streaming_parser.hpp:236:10: note: 33 lines including whitespace and comments (threshold 30)
+/home/user/project/include/jsom/streaming_parser.hpp:236:45: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  236 |     void handle_expecting_comma_or_end(char c) {
+      |                                             ^
+/home/user/project/include/jsom/streaming_parser.hpp:271:33: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  271 |     void handle_post_value(char c) {
+      |                                 ^
+/home/user/project/include/jsom/streaming_parser.hpp:306:28: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  306 |     void start_number(char c) {
+      |                            ^
+/home/user/project/include/jsom/streaming_parser.hpp:317:29: warning: parameter name 'c' is too short, expected at least 3 characters [readability-identifier-length]
+  317 |     void start_literal(char c) {
+      |                             ^
+/home/user/project/tests/test_api_compatibility.cpp:62:43: warning: 30 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   62 |                      {"age", JsonDocument(30)},
+      |                                           ^
+/home/user/project/tests/test_api_compatibility.cpp:63:46: warning: 75000.50 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   63 |                      {"salary", JsonDocument(75000.50)},
+      |                                              ^
+/home/user/project/tests/test_api_compatibility.cpp:67:68: warning: 12345 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   67 |                                               {"zip", JsonDocument(12345)}}}};
+      |                                                                    ^
+/home/user/project/tests/test_api_compatibility.cpp:97:16: warning: unchecked access to optional value [bugprone-unchecked-optional-access]
+   97 |     EXPECT_EQ(*maybe_age, 30);
+      |                ^
+/home/user/project/tests/test_format_preservation.cpp:11:72: warning: 'find' called with a string literal consisting of a single character; consider using the more effective overload accepting a character [performance-faster-string-find]
+   11 |     EXPECT_TRUE(output.find("1.0") != std::string::npos && output.find("1") == output.find("1.0"));
+      |                                                                        ^~~
+      |                                                                        '1'
+/usr/local/include/gtest/gtest.h:1807:50: note: expanded from macro 'EXPECT_TRUE'
+ 1807 | #define EXPECT_TRUE(condition) GTEST_EXPECT_TRUE(condition)
+      |                                                  ^
+/usr/local/include/gtest/gtest.h:1792:23: note: expanded from macro 'GTEST_EXPECT_TRUE'
+ 1792 |   GTEST_TEST_BOOLEAN_(condition, #condition, false, true, \
+      |                       ^
+/usr/local/include/gtest/internal/gtest-internal.h:1493:38: note: expanded from macro 'GTEST_TEST_BOOLEAN_'
+ 1493 |           ::testing::AssertionResult(expression))                     \
+      |                                      ^
+/home/user/project/tests/test_format_preservation.cpp:59:50: warning: 2.5 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   59 |     JsonDocument modified{{"value", JsonDocument(2.5)}};
+      |                                                  ^
+/home/user/project/tests/test_json_document.cpp:19:22: warning: 42 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   19 |     JsonDocument doc(42);
+      |                      ^
+/home/user/project/tests/test_json_document.cpp:32:75: warning: 30 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   32 |     JsonDocument doc{{"name", JsonDocument("John")}, {"age", JsonDocument(30)}};
+      |                                                                           ^
+/home/user/project/tests/test_json_document.cpp:54:22: warning: 42 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   54 |     JsonDocument doc(42);
+      |                      ^
+/home/user/project/tests/test_json_document.cpp:57:16: warning: unchecked access to optional value [bugprone-unchecked-optional-access]
+   57 |     EXPECT_EQ(*maybe_int, 42);
+      |                ^
+/home/user/project/tests/test_json_document.cpp:65:62: warning: 30 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   65 |         {"name", JsonDocument("John")}, {"age", JsonDocument(30)}, {"active", JsonDocument(true)}};
+      |                                                              ^
+/home/user/project/tests/test_json_pointer.cpp:10:10: warning: function 'SetUp' exceeds recommended size/complexity thresholds [readability-function-size]
+   10 |     void SetUp() override {
+      |          ^
+/home/user/project/tests/test_json_pointer.cpp:10:10: note: 32 lines including whitespace and comments (threshold 30)
+/home/user/project/tests/test_json_pointer.cpp:151:52: warning: 42 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+  151 |     doc.set_at("/config/new_setting", JsonDocument(42));
+      |                                                    ^
+/home/user/project/tests/test_lazy_number.cpp:14:20: warning: 42.5 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   14 |     LazyNumber num(42.5);
+      |                    ^
+/home/user/project/tests/test_lazy_number.cpp:20:20: warning: 42 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   20 |     LazyNumber num(42);
+      |                    ^
+/home/user/project/tests/test_lazy_number.cpp:50:21: warning: 42.0 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   50 |     LazyNumber num2(42.0);
+      |                     ^
+/home/user/project/tests/test_main.cpp:3:5: warning: use a trailing return type for this function [modernize-use-trailing-return-type]
+    3 | int main(int argc, char** argv) {
+      | ~~~ ^
+      | auto                            -> int
+/home/user/project/tests/test_memory_safety.cpp:53:25: warning: 1000 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   53 |     for (int i = 0; i < 1000; ++i) {
+      |                         ^
+/home/user/project/tests/test_memory_safety.cpp:54:19: warning: statement should be inside braces [readability-braces-around-statements]
+   54 |         if (i > 0)
+      |                   ^
+      |                    {
+   55 |             oss << ",";
+      |                        
+/home/user/project/tests/test_memory_safety.cpp:67:5: warning: use auto when initializing with a template cast to avoid duplicating the type name [modernize-use-auto]
+   67 |     std::string text = doc["text"].as<std::string>();
+      |     ^~~~~~~~~~~
+      |     auto
+/home/user/project/tests/test_performance_regression.cpp:9:17: warning: use a trailing return type for this function [modernize-use-trailing-return-type]
+    9 |     std::string create_number_heavy_json(size_t count) {
+      |     ~~~~~~~~~~~ ^
+      |     auto                                               -> std::string
+/home/user/project/tests/test_performance_regression.cpp:9:17: warning: method 'create_number_heavy_json' can be made static [readability-convert-member-functions-to-static]
+    9 |     std::string create_number_heavy_json(size_t count) {
+      |                 ^
+      |     static 
+/home/user/project/tests/test_performance_regression.cpp:13:23: warning: statement should be inside braces [readability-braces-around-statements]
+   13 |             if (i > 0)
+      |                       ^
+      |                        {
+   14 |                 oss << ",";
+      |                            
+/home/user/project/tests/test_performance_regression.cpp:15:21: warning: narrowing conversion from 'size_t' (aka 'unsigned long') to 'double' [bugprone-narrowing-conversions]
+   15 |             oss << (i * 1.5); // Remove quotes to create actual numbers
+      |                     ^
+/home/user/project/tests/test_performance_regression.cpp:15:25: warning: 1.5 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   15 |             oss << (i * 1.5); // Remove quotes to create actual numbers
+      |                         ^
+/home/user/project/tests/test_performance_regression.cpp:21:37: warning: use a trailing return type for this function [modernize-use-trailing-return-type]
+   21 |     template <typename Func> double measure_time_ms(Func&& func) {
+      |                              ~~~~~~ ^
+      |                              auto                                -> double
+/home/user/project/tests/test_performance_regression.cpp:26:16: warning: narrowing conversion from 'rep' (aka 'long') to 'double' [bugprone-narrowing-conversions]
+   26 |         return duration.count() / 1000.0;
+      |                ^
+/home/user/project/tests/test_performance_regression.cpp:26:35: warning: 1000.0 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   26 |         return duration.count() / 1000.0;
+      |                                   ^
+/home/user/project/tests/test_performance_regression.cpp:31:49: warning: 1000 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   31 |     std::string json = create_number_heavy_json(1000);
+      |                                                 ^
+/home/user/project/tests/test_performance_regression.cpp:39:49: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   39 |     std::string json = create_number_heavy_json(100);
+      |                                                 ^
+/home/user/project/tests/test_performance_regression.cpp:43:14: warning: unused local variable 'output' of type 'std::string' (aka 'basic_string<char>') [bugprone-unused-local-non-trivial-variable]
+   43 |         auto output = doc.to_json();
+      |              ^
+/home/user/project/tests/test_performance_regression.cpp:50:56: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   50 |     auto doc = parse_document(create_number_heavy_json(100));
+      |                                                        ^
+/home/user/project/tests/test_performance_regression.cpp:53:32: warning: 100 is a magic number; consider replacing it with a named constant [readability-magic-numbers]
+   53 |         for (size_t i = 0; i < 100; ++i) {
+      |                                ^
+[100%] Built target tidy

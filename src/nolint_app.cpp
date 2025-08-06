@@ -39,10 +39,11 @@ auto NolintApp::run(const AppConfig& config) -> int {
         process_warnings(warnings);
 
         // Apply all decisions
-        if (!decisions_.empty()) {
+        if (!session_.decisions.empty()) {
             terminal_->print_line("\nApplying modifications...");
             if (apply_decisions()) {
-                terminal_->print_line("Successfully applied " + std::to_string(decisions_.size())
+                terminal_->print_line("Successfully applied "
+                                      + std::to_string(session_.decisions.size())
                                       + " modifications.");
                 return 0;
             } else {
@@ -56,7 +57,7 @@ auto NolintApp::run(const AppConfig& config) -> int {
     } else {
         // Non-interactive mode - apply default style to all warnings
         for (const auto& warning : warnings) {
-            decisions_.emplace_back(warning, config_.default_style);
+            session_.decisions.emplace_back(warning, config_.default_style);
         }
 
         if (apply_decisions()) {
@@ -87,9 +88,9 @@ auto NolintApp::parse_warnings() -> std::vector<Warning> {
 
 auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
     // Initialize search state
-    original_warnings_ = warnings;
-    filtered_warnings_ = warnings;
-    current_filter_.clear();
+    session_.original_warnings = warnings;
+    session_.filtered_warnings = warnings;
+    session_.current_filter.clear();
 
     terminal_->print_line("\n=== Interactive NOLINT Tool ===");
     terminal_->print_line("For each warning, choose:");
@@ -109,8 +110,8 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
 
         // Check if we have a previous decision for this warning
         std::string warning_key = get_warning_key(warning);
-        auto prev_decision = warning_decisions_.find(warning_key);
-        if (prev_decision != warning_decisions_.end()) {
+        auto prev_decision = session_.warning_decisions.find(warning_key);
+        if (prev_decision != session_.warning_decisions.end()) {
             current_style = prev_decision->second;
         } else {
             // Default to no suppression for unvisited warnings
@@ -137,14 +138,14 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
                                   + " | Use ←→ to navigate, ↑↓ to change style");
 
             // Display filter status
-            if (current_filter_.empty()) {
+            if (session_.current_filter.empty()) {
                 terminal_->print_line("Showing " + std::to_string(get_active_warnings().size())
-                                      + "/" + std::to_string(original_warnings_.size())
+                                      + "/" + std::to_string(session_.original_warnings.size())
                                       + " warnings | Use / to search");
             } else {
                 terminal_->print_line("Showing " + std::to_string(get_active_warnings().size())
-                                      + "/" + std::to_string(original_warnings_.size())
-                                      + " warnings (filtered: '" + current_filter_
+                                      + "/" + std::to_string(session_.original_warnings.size())
+                                      + " warnings (filtered: '" + session_.current_filter
                                       + "') | Use / to search");
             }
             terminal_->print_line("");
@@ -158,7 +159,7 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
 
             case UserAction::NEXT:
                 // Auto-save current choice when navigating
-                warning_decisions_[warning_key] = current_style;
+                session_.warning_decisions[warning_key] = current_style;
 
                 if (current_index < static_cast<int>(get_active_warnings().size()) - 1) {
                     current_index++;     // Move to next warning
@@ -170,7 +171,7 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
 
             case UserAction::PREVIOUS:
                 // Auto-save current choice when navigating
-                warning_decisions_[warning_key] = current_style;
+                session_.warning_decisions[warning_key] = current_style;
 
                 if (current_index > 0) {
                     current_index--;     // Move to previous warning
@@ -182,24 +183,25 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
 
             case UserAction::SAVE_EXIT: {
                 // Auto-save current choice first
-                warning_decisions_[warning_key] = current_style;
+                session_.warning_decisions[warning_key] = current_style;
 
                 terminal_->print_line("Saving changes and exiting...");
 
-                // Build final decisions from warning_decisions_
-                decisions_.clear();
-                for (const auto& [key, style] : warning_decisions_) {
+                // Build final decisions from session_.warning_decisions
+                session_.decisions.clear();
+                for (const auto& [key, style] : session_.warning_decisions) {
                     // Find the corresponding warning
                     for (const auto& w : warnings) {
                         if (get_warning_key(w) == key && style != NolintStyle::NONE) {
-                            decisions_.emplace_back(w, style);
+                            session_.decisions.emplace_back(w, style);
                         }
                     }
                 }
 
                 if (apply_decisions()) {
                     terminal_->print_line("Successfully applied "
-                                          + std::to_string(decisions_.size()) + " suppressions.");
+                                          + std::to_string(session_.decisions.size())
+                                          + " suppressions.");
                     std::exit(0);
                 } else {
                     terminal_->print_line("Error: Failed to apply some modifications.");
@@ -225,7 +227,7 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
 
             case UserAction::ARROW_KEY:
                 // Auto-save current style choice when user changes it with arrow keys
-                warning_decisions_[warning_key] = current_style;
+                session_.warning_decisions[warning_key] = current_style;
                 // Continue the loop to redisplay with new style
                 break;
 
@@ -301,45 +303,56 @@ auto NolintApp::get_user_decision_with_arrows(const Warning& warning, NolintStyl
 
         empty_attempts = 0; // Reset counter on valid input
 
-        // Handle arrow keys and escape sequences
-        if (input == 27) { // ESC key - check for arrow sequence
-            char next1 = terminal_->read_char();
-            if (next1 == '[') {
-                char arrow = terminal_->read_char();
-                if (arrow == 'A') { // Up arrow
-                    current_style = cycle_style(current_style, warning, true);
-                    terminal_->print_line(""); // New line after key press
-                    return UserAction::ARROW_KEY;
-                } else if (arrow == 'B') { // Down arrow
-                    current_style = cycle_style(current_style, warning, false);
-                    terminal_->print_line(""); // New line after key press
-                    return UserAction::ARROW_KEY;
-                } else if (arrow == 'C') {     // Right arrow - next warning
-                    terminal_->print_line(""); // New line after key press
-                    return UserAction::NEXT;
-                } else if (arrow == 'D') {     // Left arrow - previous warning
-                    terminal_->print_line(""); // New line after key press
-                    return UserAction::PREVIOUS;
-                }
+        auto action = parse_input_char(input, warning, current_style);
+        if (action != UserAction::ARROW_KEY) {
+            // Valid action received (not just style cycling or invalid input)
+            return action;
+        }
+        // Continue loop for ARROW_KEY (style changed) or invalid input
+    }
+}
+
+auto NolintApp::parse_input_char(char c, const Warning& warning, NolintStyle& current_style)
+    -> UserAction {
+    // Handle arrow keys and escape sequences
+    if (c == 27) { // ESC key - check for arrow sequence
+        char next1 = terminal_->read_char();
+        if (next1 == '[') {
+            char arrow = terminal_->read_char();
+            if (arrow == 'A') { // Up arrow
+                current_style = cycle_style(current_style, warning, true);
+                terminal_->print_line(""); // New line after key press
+                return UserAction::ARROW_KEY;
+            } else if (arrow == 'B') { // Down arrow
+                current_style = cycle_style(current_style, warning, false);
+                terminal_->print_line(""); // New line after key press
+                return UserAction::ARROW_KEY;
+            } else if (arrow == 'C') {     // Right arrow - next warning
+                terminal_->print_line(""); // New line after key press
+                return UserAction::NEXT;
+            } else if (arrow == 'D') {     // Left arrow - previous warning
+                terminal_->print_line(""); // New line after key press
+                return UserAction::PREVIOUS;
             }
-            continue; // Invalid escape sequence
         }
+        // Invalid escape sequence - return ARROW_KEY to continue loop
+        return UserAction::ARROW_KEY;
+    }
 
-        char choice = std::tolower(input);
-        terminal_->print_line(""); // New line after key press
+    char choice = std::tolower(c);
+    terminal_->print_line(""); // New line after key press
 
-        switch (choice) {
-        case 'x':
-            return UserAction::SAVE_EXIT;
-        case 'q':
-            return UserAction::QUIT;
-        case '/':
-            return UserAction::SEARCH;
-        default:
-            terminal_->print_line("Invalid choice. Use ←→ to navigate, ↑↓ to change style, "
-                                  "'x' to save & exit, 'q' to quit, '/' to search.");
-            continue;
-        }
+    switch (choice) {
+    case 'x':
+        return UserAction::SAVE_EXIT;
+    case 'q':
+        return UserAction::QUIT;
+    case '/':
+        return UserAction::SEARCH;
+    default:
+        terminal_->print_line("Invalid choice. Use ←→ to navigate, ↑↓ to change style, "
+                              "'x' to save & exit, 'q' to quit, '/' to search.");
+        return UserAction::ARROW_KEY; // Continue loop
     }
 }
 
@@ -352,7 +365,7 @@ auto NolintApp::apply_decisions() -> bool {
     // Group decisions by file
     std::unordered_map<std::string, std::vector<std::pair<Warning, NolintStyle>>> file_decisions;
 
-    for (const auto& [warning, style] : decisions_) {
+    for (const auto& [warning, style] : session_.decisions) {
         file_decisions[warning.file_path].emplace_back(warning, style);
     }
 
@@ -398,14 +411,14 @@ auto NolintApp::apply_decisions() -> bool {
 
 auto NolintApp::load_file(const std::string& path) -> std::vector<std::string> {
     // Check cache first
-    auto it = file_cache_.find(path);
-    if (it != file_cache_.end()) {
+    auto it = session_.file_cache.find(path);
+    if (it != session_.file_cache.end()) {
         return it->second;
     }
 
     // Load from filesystem
     auto lines = filesystem_->read_file(path);
-    file_cache_[path] = lines;
+    session_.file_cache[path] = lines;
     return lines;
 }
 
@@ -494,7 +507,7 @@ auto NolintApp::get_warning_key(const Warning& warning) -> std::string {
 
 auto NolintApp::count_suppressions() const -> int {
     int count = 0;
-    for (const auto& [key, style] : warning_decisions_) {
+    for (const auto& [key, style] : session_.warning_decisions) {
         if (style != NolintStyle::NONE) {
             count++;
         }
@@ -506,10 +519,10 @@ auto NolintApp::handle_search_input() -> void {
     terminal_->print_line(""); // New line after key press
 
     // Show current filter if active
-    if (current_filter_.empty()) {
+    if (session_.current_filter.empty()) {
         terminal_->print("Enter search filter (empty to clear): ");
     } else {
-        terminal_->print("Enter search filter (current: '" + current_filter_
+        terminal_->print("Enter search filter (current: '" + session_.current_filter
                          + "', empty to clear): ");
     }
 
@@ -520,31 +533,35 @@ auto NolintApp::handle_search_input() -> void {
 auto NolintApp::apply_filter(const std::string& filter) -> void {
     if (filter.empty()) {
         // Clear filter - show all warnings
-        current_filter_.clear();
-        filtered_warnings_ = original_warnings_;
+        session_.current_filter.clear();
+        session_.filtered_warnings = session_.original_warnings;
         terminal_->print_line("Filter cleared - showing all "
-                              + std::to_string(original_warnings_.size()) + " warnings");
+                              + std::to_string(session_.original_warnings.size()) + " warnings");
     } else {
         // Apply new filter
-        current_filter_ = filter;
-        filtered_warnings_ = functional_core::filter_warnings(original_warnings_, filter);
+        session_.current_filter = filter;
+        session_.filtered_warnings
+            = functional_core::filter_warnings(session_.original_warnings, filter);
 
-        if (filtered_warnings_.empty()) {
+        if (session_.filtered_warnings.empty()) {
             // No matches - revert to showing all warnings
-            filtered_warnings_ = original_warnings_;
-            current_filter_.clear();
+            session_.filtered_warnings = session_.original_warnings;
+            session_.current_filter.clear();
             terminal_->print_line("No warnings match filter '" + filter + "' - showing all "
-                                  + std::to_string(original_warnings_.size()) + " warnings");
+                                  + std::to_string(session_.original_warnings.size())
+                                  + " warnings");
         } else {
             terminal_->print_line("Applied filter: '" + filter + "' - showing "
-                                  + std::to_string(filtered_warnings_.size()) + "/"
-                                  + std::to_string(original_warnings_.size()) + " warnings");
+                                  + std::to_string(session_.filtered_warnings.size()) + "/"
+                                  + std::to_string(session_.original_warnings.size())
+                                  + " warnings");
         }
     }
 }
 
 auto NolintApp::get_active_warnings() const -> const std::vector<Warning>& {
-    return filtered_warnings_.empty() ? original_warnings_ : filtered_warnings_;
+    return session_.filtered_warnings.empty() ? session_.original_warnings
+                                              : session_.filtered_warnings;
 }
 
 } // namespace nolint

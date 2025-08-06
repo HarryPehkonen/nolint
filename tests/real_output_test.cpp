@@ -1,4 +1,6 @@
+#include "tests/test_config.hpp"
 #include "warning_parser.hpp"
+#include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 
@@ -6,10 +8,14 @@ using namespace nolint;
 
 TEST(RealOutputTest, ParseActualClangTidyOutput) {
     ClangTidyParser parser;
-    std::ifstream file("/home/harri/Dropbox/code/nolint/tidy_output.txt");
+
+    // Use configured test data path
+    std::filesystem::path test_file
+        = std::filesystem::path(TEST_DATA_DIR) / "sample_tidy_output.txt";
+    std::ifstream file(test_file);
 
     if (!file.is_open()) {
-        GTEST_SKIP() << "tidy_output.txt not found";
+        GTEST_SKIP() << "sample_tidy_output.txt not found at: " << test_file;
     }
 
     auto warnings = parser.parse_warnings(file);

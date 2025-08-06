@@ -27,6 +27,12 @@ include(GoogleTest)
 # Include directories
 include_directories(include)
 
+# Configure test data path
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_config.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/tests/test_config.hpp"
+)
+
 # Source files
 set(NOLINT_SOURCES
     src/functional_core.cpp
@@ -49,6 +55,8 @@ add_executable(nolint_tests
     tests/ui_integration_test.cpp
     ${NOLINT_SOURCES}
 )
+
+target_include_directories(nolint_tests PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 target_link_libraries(nolint_tests 
     PRIVATE 

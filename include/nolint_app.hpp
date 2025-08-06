@@ -32,6 +32,31 @@ enum class UserAction {
     SEARCH     // '/' - enter search mode
 };
 
+// Consolidate all session state into a single struct
+struct SessionState {
+    // File management
+    std::unordered_map<std::string, std::vector<std::string>> file_cache;
+    std::vector<std::pair<Warning, NolintStyle>> decisions;
+
+    // Warning navigation and choice memory
+    std::unordered_map<std::string, NolintStyle> warning_decisions;
+
+    // Search/filter state
+    std::string current_filter;
+    std::vector<Warning> filtered_warnings;
+    std::vector<Warning> original_warnings;
+
+    // Clear all state
+    auto reset() -> void {
+        file_cache.clear();
+        decisions.clear();
+        warning_decisions.clear();
+        current_filter.clear();
+        filtered_warnings.clear();
+        original_warnings.clear();
+    }
+};
+
 class NolintApp {
 private:
     std::unique_ptr<IWarningParser> parser_;
@@ -39,17 +64,8 @@ private:
     std::unique_ptr<ITerminal> terminal_;
     AppConfig config_;
 
-    // Track user decisions and file modifications
-    std::unordered_map<std::string, std::vector<std::string>> file_cache_;
-    std::vector<std::pair<Warning, NolintStyle>> decisions_;
-
-    // Track decisions by warning (for remembering choices when going back)
-    std::unordered_map<std::string, NolintStyle> warning_decisions_;
-
-    // Search/filter functionality
-    std::string current_filter_;
-    std::vector<Warning> filtered_warnings_;
-    std::vector<Warning> original_warnings_;
+    // All session state consolidated
+    SessionState session_;
 
 public:
     NolintApp(std::unique_ptr<IWarningParser> parser, std::unique_ptr<IFileSystem> filesystem,
@@ -71,6 +87,7 @@ private:
                          NolintStyle current_style) -> void;
     auto get_user_decision_with_arrows(const Warning& warning, NolintStyle& current_style)
         -> UserAction;
+    auto parse_input_char(char c, const Warning& warning, NolintStyle& current_style) -> UserAction;
     auto apply_decisions() -> bool;
     auto load_file(const std::string& path) -> std::vector<std::string>;
     auto save_file(const std::string& path, std::span<const std::string> lines) -> bool;
