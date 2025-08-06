@@ -43,6 +43,7 @@ set(NOLINT_SOURCES
     src/functional_core.cpp
     src/warning_parser.cpp
     src/nolint_app.cpp
+    src/terminal_io.cpp
 )
 
 # Main executable
@@ -82,10 +83,20 @@ add_custom_target(format
 )
 
 add_custom_target(tidy
-    COMMAND clang-tidy src/*.cpp -- -std=c++20 -I${CMAKE_SOURCE_DIR}/include
+    COMMAND clang-tidy src/*.cpp include/*.hpp tests/*.cpp -- -std=c++20 -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Running clang-tidy"
+    COMMENT "Running clang-tidy on source, headers, and tests"
     DEPENDS nolint
+)
+
+add_custom_target(quality
+    COMMAND ${CMAKE_COMMAND} --build . --target format
+    COMMAND ${CMAKE_COMMAND} --build . --target tidy
+    COMMAND ${CMAKE_COMMAND} --build . --target nolint_tests
+    COMMAND ./nolint_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running comprehensive quality checks: format, tidy, and tests"
+    DEPENDS nolint nolint_tests
 )
 
 # Make format run before build

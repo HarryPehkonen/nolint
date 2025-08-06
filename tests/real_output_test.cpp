@@ -1,8 +1,11 @@
 #include "tests/test_config.hpp"
 #include "warning_parser.hpp"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <set>
 
 using namespace nolint;
 
@@ -20,36 +23,63 @@ TEST(RealOutputTest, ParseActualClangTidyOutput) {
 
     auto warnings = parser.parse_warnings(file);
 
-    std::cout << "Parsed " << warnings.size() << " warnings\n";
+    // Assert exact total warnings in the test file (from test output we saw it's 242)
+    ASSERT_EQ(warnings.size(), 242);
 
-    // Show first few warnings for debugging
-    for (size_t i = 0; i < std::min(size_t(5), warnings.size()); ++i) {
-        const auto& w = warnings[i];
-        std::cout << "Warning " << i << ":\n";
-        std::cout << "  File: " << w.file_path << "\n";
-        std::cout << "  Line: " << w.line_number << ":" << w.column_number << "\n";
-        std::cout << "  Type: " << w.warning_type << "\n";
-        std::cout << "  Message: " << w.message << "\n";
-        std::cout << "  Function lines: "
-                  << (w.function_lines ? std::to_string(*w.function_lines) : "none") << "\n\n";
-    }
+    // Verify specific warnings we know are in the file
 
-    // Look for function-size warnings specifically
-    int function_warnings = 0;
-    int function_with_lines = 0;
+    // Find first warning: readability-identifier-length at line 13:15
+    auto first_warning = std::find_if(warnings.begin(), warnings.end(), [](const Warning& w) {
+        return w.line_number == 13 && w.column_number == 15
+               && w.warning_type == "readability-identifier-length";
+    });
+    ASSERT_NE(first_warning, warnings.end());
+    EXPECT_EQ(first_warning->file_path,
+              "/home/user/project/benchmarks/benchmark_dom_access_compat.cpp");
+    EXPECT_THAT(first_warning->message, ::testing::HasSubstr("variable name '_' is too short"));
+
+    // Find magic number warning at line 20:29
+    auto magic_warning = std::find_if(warnings.begin(), warnings.end(), [](const Warning& w) {
+        return w.line_number == 20 && w.column_number == 29
+               && w.warning_type == "readability-magic-numbers";
+    });
+    ASSERT_NE(magic_warning, warnings.end());
+    EXPECT_EQ(magic_warning->file_path,
+              "/home/user/project/benchmarks/benchmark_dom_access_compat.cpp");
+    EXPECT_THAT(magic_warning->message, ::testing::HasSubstr("50 is a magic number"));
+
+    // Count function-size warnings and verify they have line counts
+    long function_warnings_count
+        = std::count_if(warnings.begin(), warnings.end(), [](const Warning& w) {
+              return w.warning_type == "readability-function-size";
+          });
+
+    long function_warnings_with_lines
+        = std::count_if(warnings.begin(), warnings.end(), [](const Warning& w) {
+              return w.warning_type == "readability-function-size" && w.function_lines.has_value();
+          });
+
+    // Assert exact counts based on test output we observed
+    EXPECT_EQ(function_warnings_count, 23);
+    EXPECT_EQ(function_warnings_with_lines, 23); // All function warnings should have line counts
+
+    // Verify a specific function-size warning with known line count
+    auto large_function = std::find_if(warnings.begin(), warnings.end(), [](const Warning& w) {
+        return w.warning_type == "readability-function-size" && w.function_lines.has_value()
+               && *w.function_lines == 86; // One of the largest functions we saw
+    });
+    ASSERT_NE(large_function, warnings.end());
+    EXPECT_THAT(large_function->file_path, ::testing::HasSubstr("json_formatter.hpp"));
+
+    // Count different warning types to ensure parsing diversity
+    std::set<std::string> warning_types;
     for (const auto& w : warnings) {
-        if (w.warning_type == "readability-function-size") {
-            function_warnings++;
-            if (w.function_lines.has_value()) {
-                function_with_lines++;
-                std::cout << "Function-size warning with " << *w.function_lines << " lines in "
-                          << w.file_path << "\n";
-            }
-        }
+        warning_types.insert(w.warning_type);
     }
 
-    std::cout << "Found " << function_warnings << " function-size warnings\n";
-    std::cout << "Found " << function_with_lines << " with line count notes\n";
-
-    EXPECT_GT(warnings.size(), 0);
+    // Should have multiple warning types
+    EXPECT_GE(warning_types.size(), 3);
+    EXPECT_THAT(warning_types, ::testing::Contains("readability-identifier-length"));
+    EXPECT_THAT(warning_types, ::testing::Contains("readability-magic-numbers"));
+    EXPECT_THAT(warning_types, ::testing::Contains("readability-function-size"));
 }

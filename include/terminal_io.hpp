@@ -9,37 +9,8 @@
 
 namespace nolint {
 
-// Global terminal cleanup for signal handling
-static struct termios* g_original_termios = nullptr;
-static int g_tty_fd = -1;
-
-inline void restore_terminal_on_signal(int sig) {
-    if (g_original_termios && g_tty_fd >= 0) {
-        tcsetattr(g_tty_fd, TCSAFLUSH, g_original_termios);
-        // Also try to restore stdin/stdout if they were affected
-        if (isatty(STDIN_FILENO)) {
-            tcsetattr(STDIN_FILENO, TCSAFLUSH, g_original_termios);
-        }
-        if (isatty(STDOUT_FILENO)) {
-            tcsetattr(STDOUT_FILENO, TCSAFLUSH, g_original_termios);
-        }
-    }
-    std::signal(sig, SIG_DFL);
-    std::raise(sig);
-}
-
-inline void restore_terminal_on_exit() {
-    if (g_original_termios && g_tty_fd >= 0) {
-        tcsetattr(g_tty_fd, TCSAFLUSH, g_original_termios);
-        // Also try to restore stdin/stdout if they were affected
-        if (isatty(STDIN_FILENO)) {
-            tcsetattr(STDIN_FILENO, TCSAFLUSH, g_original_termios);
-        }
-        if (isatty(STDOUT_FILENO)) {
-            tcsetattr(STDOUT_FILENO, TCSAFLUSH, g_original_termios);
-        }
-    }
-}
+// Forward declaration for Terminal class
+class Terminal;
 
 // Abstract interface for terminal I/O operations (for testability)
 class ITerminal {
@@ -61,6 +32,14 @@ private:
     struct termios original_termios_;
     bool termios_saved_ = false;
 
+    // Static members for signal handling (better encapsulation than globals)
+    static struct termios* s_original_termios;
+    static int s_tty_fd;
+
+    // Static signal handler methods
+    static void restore_terminal_on_signal(int sig);
+    static void restore_terminal_on_exit();
+
 public:
     Terminal() {
         // If stdin is not a terminal (piped input), try to open /dev/tty for interaction
@@ -74,9 +53,9 @@ public:
                 if (tcgetattr(fileno(tty_file_), &original_termios_) == 0) {
                     termios_saved_ = true;
 
-                    // Set up global signal handling for terminal restoration
-                    g_original_termios = &original_termios_;
-                    g_tty_fd = fileno(tty_file_);
+                    // Set up static signal handling for terminal restoration
+                    s_original_termios = &original_termios_;
+                    s_tty_fd = fileno(tty_file_);
 
                     // Install signal handlers and exit handler
                     std::signal(SIGINT, restore_terminal_on_signal);
@@ -104,9 +83,9 @@ public:
                     tcsetattr(STDOUT_FILENO, TCSAFLUSH, &original_termios_);
                 }
 
-                // Clear global state
-                g_original_termios = nullptr;
-                g_tty_fd = -1;
+                // Clear static state
+                s_original_termios = nullptr;
+                s_tty_fd = -1;
 
                 // Restore default signal handlers
                 std::signal(SIGINT, SIG_DFL);
