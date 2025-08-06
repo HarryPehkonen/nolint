@@ -3,7 +3,7 @@
 ## Overview
 `nolint` is a command-line tool that automatically applies `// NOLINT` comments to C++ source code based on clang-tidy warnings. It provides an interactive interface for reviewing and selectively suppressing linting warnings.
 
-**✅ FULLY IMPLEMENTED**: All requirements below have been successfully implemented and are working in production. The tool features comprehensive interactive capabilities, robust error handling, and extensive test coverage (82/82 tests passing).
+**  FULLY IMPLEMENTED**: All requirements below have been successfully implemented and are working in production. The tool features comprehensive interactive capabilities, robust error handling, and extensive test coverage (82/82 tests passing).
 
 ## Functional Requirements
 
@@ -55,23 +55,23 @@ For NOLINTBEGIN/END placement:
 - **Placement Logic**: NOLINTBEGIN before function signature, NOLINTEND after function closing brace
 - **Display Enhancement**: Show split view with actual code lines and gap separator (`=== N more lines ==`)
 
-#### 4. **Decision Tracking and Modification** ⭐
+#### 4. **Decision Tracking and Modification**  
 
-**✅ FULLY IMPLEMENTED**: Users can navigate bidirectionally and modify any previous decision with full choice memory.
+**  FULLY IMPLEMENTED**: Users can navigate bidirectionally and modify any previous decision with full choice memory.
 
 **Architecture Implementation**:
-- **✅ Deferred Modification**: Changes tracked separately in `warning_decisions_` map
-- **✅ Decision History**: All decisions maintained with ability to modify via navigation
-- **✅ Preview Mode**: Real-time preview shows exact code with green NOLINT highlighting
-- **✅ Conflict Resolution**: Robust handling of multiple warnings per line
-- **✅ Batch Application**: All decisions applied atomically on save
+- **  Deferred Modification**: Changes tracked separately in `warning_decisions_` map
+- **  Decision History**: All decisions maintained with ability to modify via navigation
+- **  Preview Mode**: Real-time preview shows exact code with green NOLINT highlighting
+- **  Conflict Resolution**: Robust handling of multiple warnings per line
+- **  Batch Application**: All decisions applied atomically on save
 
 **User Experience Implementation**:
-- **✅ Navigate and modify**: Arrow navigation preserves and allows changing any decision  
-- **✅ Immediate preview**: Real-time display of code transformations with NOLINT comments
-- **✅ Save summary**: Shows count of suppressions applied on exit
-- **✅ Undo capability**: Setting style to NONE removes any suppression
-- **✅ Status indicators**: Suppression counter and filter status always visible
+- **  Navigate and modify**: Arrow navigation preserves and allows changing any decision  
+- **  Immediate preview**: Real-time display of code transformations with NOLINT comments
+- **  Save summary**: Shows count of suppressions applied on exit
+- **  Undo capability**: Setting style to NONE removes any suppression
+- **  Status indicators**: Suppression counter and filter status always visible
 
 **Technical Requirements**:
 ```cpp
@@ -204,7 +204,7 @@ Saving changes...
 
 ## Architecture Philosophy
 
-### **Functional Programming Approach** ⭐
+### **Functional Programming Approach**  
 The codebase should prioritize **functional programming principles** for improved testability and maintainability:
 
 1. **Pure Functions for Core Logic**:
@@ -239,17 +239,17 @@ The codebase should prioritize **functional programming principles** for improve
 - **RAII essential**: Terminal state must be restored reliably
 - **Single-key input**: Use `tcsetattr()` with `VMIN=1, VTIME=0` for immediate response
 
-## ✅ Implementation Status: COMPLETE
+##   Implementation Status: COMPLETE
 
 **All core requirements have been fully implemented:**
-- ✅ Interactive review with real-time preview
-- ✅ Multiple suppression styles with live cycling
-- ✅ Bidirectional navigation with choice memory
-- ✅ Search/filter functionality with robust bounds checking
-- ✅ Deferred modification with atomic saves
-- ✅ Terminal handling with proper state restoration
-- ✅ Comprehensive error handling and crash prevention
-- ✅ Extensive test coverage (82/82 tests passing)
+-   Interactive review with real-time preview
+-   Multiple suppression styles with live cycling
+-   Bidirectional navigation with choice memory
+-   Search/filter functionality with robust bounds checking
+-   Deferred modification with atomic saves
+-   Terminal handling with proper state restoration
+-   Comprehensive error handling and crash prevention
+-   Extensive test coverage (82/82 tests passing)
 
 **Production Ready**: The tool is fully functional and ready for daily use managing clang-tidy suppressions.
 

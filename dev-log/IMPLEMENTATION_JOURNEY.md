@@ -6,7 +6,7 @@
 
 This document captures the design decisions, implementation approaches, and lessons learned during the development of `nolint`. It includes both successful approaches and failed attempts.
 
-**✅ FINAL STATUS**: All major issues resolved. The tool is production-ready with comprehensive functionality and robust error handling.
+**  FINAL STATUS**: All major issues resolved. The tool is production-ready with comprehensive functionality and robust error handling.
 
 ## Major Design Decisions
 
@@ -161,7 +161,7 @@ setbuf(tty, nullptr);
 
 **Rationale**: Simpler UX than dedicated undo key - everything is style selection
 
-### 14. ✅ **RESOLVED**: Previous Navigation with Decision Memory
+### 14.   **RESOLVED**: Previous Navigation with Decision Memory
 
 **Problem**: Users needed to navigate backwards and modify previous decisions
 
@@ -197,7 +197,7 @@ if (prev_decision != warning_decisions_.end()) {
 
 **Result**: Users can now freely navigate backwards and forwards, with all choices preserved
 
-### 15. ✅ **IMPLEMENTED**: Integrated Preview System
+### 15.   **IMPLEMENTED**: Integrated Preview System
 
 **Problem**: Users needed to see what the code would look like with NOLINT applied
 
@@ -325,7 +325,7 @@ auto highlight_nolint_comments(const std::string& line) -> std::string {
 **Initial Design**: Linear forward-only navigation (Y/N/Q/X/S)
 **Final Implementation**: Bidirectional navigation with style flexibility and single-key controls
 
-**✅ Final Implemented Controls**:
+**  Final Implemented Controls**:
 1. **↑/↓** - Cycle through styles with auto-save and live preview
 2. **←/→** - Navigate between warnings (bidirectional with choice memory)
 3. **x** - Save all changes and exit with summary
@@ -433,13 +433,13 @@ TEST_F(FunctionalTest, ApplyNolintBlock) {
 - Keep minimal integration tests for I/O edge cases
 - Focus test coverage on the functional core
 
-### ✅ Functional Programming Successfully Implemented
+###   Functional Programming Successfully Implemented
 
 **Text Processing is Naturally Functional:**
-- ✅ Input: Lines of text + Modification rules
-- ✅ Output: Transformed lines of text
-- ✅ Pure functions in functional_core namespace
-- ✅ 34 functional core tests with no mocking required
+-   Input: Lines of text + Modification rules
+-   Output: Transformed lines of text
+-   Pure functions in functional_core namespace
+-   34 functional core tests with no mocking required
 
 **Error Handling Becomes Explicit:**
 ```cpp
@@ -466,18 +466,18 @@ auto formatted = apply_line_endings(transformation.lines, ending);
 4. **Snapshot Testing**: Capture expected outputs for complex scenarios
 5. **Performance Testing**: Pure functions are easy to benchmark
 
-## ✅ Production Ready Summary
+##   Production Ready Summary
 
 **All Core Requirements Successfully Implemented:**
-- ✅ Interactive UI with real-time preview and green highlighting
-- ✅ Bidirectional navigation with comprehensive choice memory
-- ✅ Search/filter functionality with robust bounds checking  
-- ✅ Multiple suppression styles with intelligent availability
-- ✅ Memory-safe implementation with crash regression tests
-- ✅ Perfect terminal state restoration using RAII
-- ✅ Functional core architecture with 82 passing tests
-- ✅ Auto-save functionality for seamless user experience
-- ✅ Clean exit interface with confirmations
+-   Interactive UI with real-time preview and green highlighting
+-   Bidirectional navigation with comprehensive choice memory
+-   Search/filter functionality with robust bounds checking  
+-   Multiple suppression styles with intelligent availability
+-   Memory-safe implementation with crash regression tests
+-   Perfect terminal state restoration using RAII
+-   Functional core architecture with 82 passing tests
+-   Auto-save functionality for seamless user experience
+-   Clean exit interface with confirmations
 
 **The tool is ready for production use managing clang-tidy suppressions.**
 

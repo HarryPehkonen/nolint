@@ -4,28 +4,28 @@ A C++20 command-line tool that automates adding `// NOLINT` comments to C++ sour
 
 ## Key Features
 
-### 🎯 **Choice Memory**
+###   **Choice Memory**
 Navigate freely between warnings - all your decisions are remembered! Go back to any previous warning and change your mind without losing progress.
 
-### 🔍 **Search & Filter** 
+###   **Search & Filter** 
 Find specific warnings instantly with `/` key. Filter by warning type (`readability-magic-numbers`), file path, or message content. Works seamlessly with choice memory.
 
-### 📋 **Interactive Preview**
+###   **Interactive Preview**
 See exactly how your code will look with NOLINT comments applied before making changes. Real-time preview updates as you cycle through suppression styles.
 
-### ⚡ **Lightning-Fast Navigation**
+###   **Lightning-Fast Navigation**
 - **Single-key controls**: No Enter key required - immediate response
 - **Arrow key navigation**: `←→` to move between warnings, `↑↓` to change styles
 - **Auto-save**: All style changes immediately preserved
 - **Bidirectional**: Navigate backwards and forwards seamlessly
 
-### 🎨 **Multiple Suppression Styles**
+###   **Multiple Suppression Styles**
 - `// NOLINT(warning-type)` - Inline suppression
 - `// NOLINTNEXTLINE(warning-type)` - Previous line suppression  
 - `// NOLINTBEGIN/NOLINTEND(warning-type)` - Block suppression for functions
 - Smart availability based on warning context
 
-### 🚀 **Advanced Capabilities**
+###   **Advanced Capabilities**
 - **Piped Input Support**: Works with `clang-tidy output.txt | nolint` while maintaining full interactivity
 - **Color-coded Display**: Green highlighting for NOLINT comments in preview
 - **Atomic File Operations**: Safe modification with proper error handling
@@ -96,7 +96,7 @@ Test categories:
 
 ## Production Ready
 
-✅ **All major issues resolved**:
+  **All major issues resolved**:
 - Memory-safe with comprehensive bounds checking
 - Perfect terminal state restoration
 - Robust search functionality with crash regression tests
