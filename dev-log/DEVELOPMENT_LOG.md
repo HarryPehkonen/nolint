@@ -286,6 +286,15 @@ return action; // Always return, don't loop on ARROW_KEY
 - Visual terminal bugs require understanding the complete control flow, not just surface symptoms
 - Testing terminal display bugs with unit tests is challenging - mock terminals don't capture real display behavior  
 - Sometimes the "obvious" fix (escape sequences) isn't the real solution - control flow issues can be more fundamental
+**Architectural Insights**: This bug was particularly difficult to debug due to the **nested imperative loop architecture** with implicit rendering:
+- **Current Problem**: Display refresh only happened on loop entry/exit, not on state changes
+- **Root Cause**: Implicit rendering tied to control flow rather than explicit rendering tied to state changes
+- **Better Architectures** that would have made this bug trivial to debug:
+  1. **Event-Driven**: Explicit `render()` call after every state change
+  2. **State Machine**: Clear state transitions with defined render points  
+  3. **Functional Reactive**: `render(model)` + pure `update(model, input)` cycle - this bug would be impossible
+  4. **Component-Based**: Observer pattern with automatic render callbacks
+- **Key Learning**: Any architecture with explicit render calls would have made this bug obvious - every state change would immediately trigger a display update
 **Result**: Up/down arrow keys now immediately refresh the display showing the new NOLINT style preview
 
 ## Architecture Decisions Maintained
