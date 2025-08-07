@@ -228,7 +228,8 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
             case UserAction::ARROW_KEY:
                 // Auto-save current style choice when user changes it with arrow keys
                 session_.warning_decisions[warning_key] = current_style;
-                // Continue the loop to redisplay with new style
+                // Continue the loop - but the display doesn't refresh!
+                // We need to force a refresh here by breaking out and re-entering
                 break;
 
             case UserAction::SEARCH:
@@ -287,6 +288,7 @@ auto NolintApp::get_user_decision_with_arrows(const Warning& warning, NolintStyl
     const int max_empty_attempts = 5; // Prevent infinite loop in non-interactive environments
 
     while (true) {
+        terminal_->print("\r\033[2K"); // Return to beginning, then clear line
         terminal_->print("Navigate [←→] Style [↑↓] Save & Exit [x] Quit [q] Search [/]: ");
 
         // Use read_char for immediate single-key response
@@ -304,11 +306,8 @@ auto NolintApp::get_user_decision_with_arrows(const Warning& warning, NolintStyl
         empty_attempts = 0; // Reset counter on valid input
 
         auto action = parse_input_char(input, warning, current_style);
-        if (action != UserAction::ARROW_KEY) {
-            // Valid action received (not just style cycling or invalid input)
-            return action;
-        }
-        // Continue loop for ARROW_KEY (style changed) or invalid input
+        // Always return the action to let the caller handle display refresh
+        return action;
     }
 }
 
@@ -321,11 +320,9 @@ auto NolintApp::parse_input_char(char c, const Warning& warning, NolintStyle& cu
             char arrow = terminal_->read_char();
             if (arrow == 'A') { // Up arrow
                 current_style = cycle_style(current_style, warning, true);
-                terminal_->print_line(""); // New line after key press
                 return UserAction::ARROW_KEY;
             } else if (arrow == 'B') { // Down arrow
                 current_style = cycle_style(current_style, warning, false);
-                terminal_->print_line(""); // New line after key press
                 return UserAction::ARROW_KEY;
             } else if (arrow == 'C') {     // Right arrow - next warning
                 terminal_->print_line(""); // New line after key press

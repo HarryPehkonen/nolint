@@ -258,6 +258,36 @@ if (!isatty(STDIN_FILENO) && config_.interactive) {
 **Solution**: Removed 's', made 'x' save+exit with summary, added y/n confirmation to 'q'
 **Result**: Clean, intuitive exit interface
 
+### 8. Terminal Display Bug - Arrow Key Style Cycling   RESOLVED
+**Status**: **FULLY RESOLVED**
+**Issue**: When pressing up/down arrow keys to cycle NOLINT styles, the display wouldn't refresh to show the new style preview. Users had to navigate away and back to see the updated display.
+**Root Cause Analysis**: 
+- Arrow key presses were handled by `get_user_decision_with_arrows()` which looped internally
+- The function never returned to trigger a display refresh 
+- When `UserAction::ARROW_KEY` was returned, the code continued looping instead of refreshing
+- Additionally, unnecessary newlines were printed after arrow key presses, causing prompt duplication
+**Solution**: Three-part fix:
+1. **Removed unnecessary newlines** - Eliminated `terminal_->print_line("")` calls after up/down arrow key presses
+2. **Added prompt line clearing** - Added `\r\033[2K` escape sequence before reprinting prompt to prevent line duplication
+3. **Fixed control flow** - Modified `get_user_decision_with_arrows()` to return immediately when arrow keys are pressed, allowing the caller to handle display refresh properly
+**Implementation**:
+```cpp
+// In parse_input_char - removed newlines for up/down arrows:
+if (arrow == 'A') { // Up arrow
+    current_style = cycle_style(current_style, warning, true);
+    return UserAction::ARROW_KEY; // No newline printed
+}
+
+// In get_user_decision_with_arrows - always return to trigger refresh:
+auto action = parse_input_char(input, warning, current_style);
+return action; // Always return, don't loop on ARROW_KEY
+```
+**Lessons Learned**: 
+- Visual terminal bugs require understanding the complete control flow, not just surface symptoms
+- Testing terminal display bugs with unit tests is challenging - mock terminals don't capture real display behavior  
+- Sometimes the "obvious" fix (escape sequences) isn't the real solution - control flow issues can be more fundamental
+**Result**: Up/down arrow keys now immediately refresh the display showing the new NOLINT style preview
+
 ## Architecture Decisions Maintained
 
 ### 1. Functional Core Separation
