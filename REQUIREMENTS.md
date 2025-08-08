@@ -29,13 +29,15 @@
   - **Critical**: For NOLINT_BLOCK mode, show split display with actual function boundaries and gap indicator
   - **Visual Preview**: Show exactly where suppression comments will be placed using `+` prefix
 - Present user options:
-  - `↑/↓` - Cycle through different NOLINT formats (auto-saved with live preview)  
-  - `←/→` - Navigate between warnings (bidirectional with decision memory)
-  - `x` - Save all changes and exit with summary
-  - `q` - Quit without saving (with y/n confirmation)
-  - `/` - Search/filter warnings by type or content
-  - **Key Feature**: All style changes auto-saved immediately  
+  - **↑/↓** - Cycle through different NOLINT formats (auto-saved with live preview)  
+  - **←/→** - Navigate between warnings (bidirectional with decision memory)
+  - **x** - Save all changes and exit with summary
+  - **q** - Quit without saving (with y/n confirmation)
+  - **/** - Search/filter warnings by type or content
+  - **t** - Show warning type statistics with interactive navigation
+  - **Key Feature**: All style changes auto-saved immediately when navigating
   - **Critical Feature**: Navigation remembers and preserves all previous decisions
+  - **Real-time Status**: Displays suppression count and filter status continuously
 
 #### 3. Suppression Comment Types
 Support multiple NOLINT formats (cycled with arrow keys):
@@ -55,7 +57,81 @@ For NOLINTBEGIN/END placement:
 - **Placement Logic**: NOLINTBEGIN before function signature, NOLINTEND after function closing brace
 - **Display Enhancement**: Show split view with actual code lines and gap separator (`=== N more lines ==`)
 
-#### 4. **Decision Tracking and Modification**  
+#### 4. **Statistics and Analysis ('t' key)**
+
+**  FULLY IMPLEMENTED**: Comprehensive warning type analysis with interactive navigation and filtering integration.
+
+**Core Statistics Features**:
+- **Warning Type Summary**: Display all warning types with total counts, addressed counts, and visited counts
+- **Progress Tracking**: Shows percentage of each warning type that has been addressed with NOLINT suppressions
+- **Visit Tracking**: Tracks which warnings have been displayed to the user during the session
+- **Color-Coded Display**: Visual indicators for suppression status:
+  - **Green**: 100% of warnings addressed (fully suppressed)
+  - **Yellow**: Partially addressed (some warnings suppressed)
+  - **Red**: Not addressed (no suppressions applied)
+
+**Interactive Navigation**:
+- **↑/↓ arrows**: Navigate between warning types in statistics view
+- **Enter**: Filter main view to show only the selected warning type
+- **Escape**: Return to main warning review interface
+- **Real-time updates**: Statistics recalculated as user makes suppression decisions
+
+**Statistics Display Format**:
+```
+=== Warning Type Summary ===
+Total: 47 warnings | Addressed: 12 (26%) | Visited: 23
+
+┌─────────────────────────────────────┬─────────┬─────────────┬─────────┐
+│ Warning Type                        │  Total  │  Addressed  │ Visited │
+├─────────────────────────────────────┼─────────┼─────────────┼─────────┤
+│ >> readability-function-size        │     8   │    3 (38%)  │    5    │
+│    readability-magic-numbers        │    15   │   10 (67%)  │   12    │
+│    modernize-use-auto               │    24   │    0 (0%)   │    6    │
+└─────────────────────────────────────┴─────────┴─────────────┴─────────┘
+```
+
+**Integration with Main Workflow**:
+- Statistics accessible from any warning via 't' key
+- Filter integration allows immediate focus on specific warning types
+- Progress persists across navigation and filter operations
+- Statistics update in real-time as suppressions are applied
+
+#### 5. **Search and Filtering ('/' key)**
+
+**  FULLY IMPLEMENTED**: Powerful multi-term search functionality with cross-field matching and robust bounds checking.
+
+**Search Features**:
+- **Multi-term AND logic**: Space-separated terms must all match (e.g., "magic 42" finds warnings containing both "magic" AND "42")
+- **Cross-field searching**: Searches across file path, warning type, message, and line numbers
+- **Case-insensitive matching**: Automatically converts search terms to lowercase
+- **Real-time filter status**: Shows "X/Y warnings (filtered: 'term')" in status line
+- **Live character echoing**: Search input fully visible even in raw terminal mode
+
+**Search Workflow**:
+1. Press '/' key from any warning to enter search mode
+2. Type search terms (space-separated for AND logic)
+3. Press Enter to apply filter
+4. Navigate filtered results with ←/→ arrows
+5. Enter empty search to clear filter and show all warnings
+
+**Bounds Checking Integration**:
+- **Safe navigation**: Prevents crashes when navigating filtered results
+- **Automatic adjustment**: Current index adjusted when filter changes result set
+- **Graceful fallbacks**: Shows all warnings if filter produces no matches
+- **Clear feedback**: "No warnings match filter" message with automatic reversion
+
+**Filter Status Display**:
+```
+Showing 5/47 warnings (filtered: 'magic numbers') | Use / to search
+```
+
+**Advanced Search Examples**:
+- `readability` - Shows all readability warnings
+- `magic 42` - Shows warnings containing both "magic" AND "42"
+- `src/parser.cpp` - Shows warnings only from specific file
+- `line 150` - Shows warnings near line 150
+
+#### 6. **Decision Tracking and Modification**  
 
 **  FULLY IMPLEMENTED**: Users can navigate bidirectionally and modify any previous decision with full choice memory.
 
@@ -105,28 +181,28 @@ class DecisionTracker {
 
 #### Basic Usage
 ```bash
-# From file
+# From file (interactive mode)
 nolint --input warnings.txt
 
-# Pipe mode
+# Pipe mode (interactive with /dev/tty)
 clang-tidy src/*.cpp | nolint
 
-# With custom context
-nolint --input warnings.txt -B 10 -A 10
+# Non-interactive with default style
+nolint --style nextline --non-interactive < warnings.txt
+
+# Dry run to preview changes
+nolint --input warnings.txt --dry-run
 ```
 
 #### Options
-- `--input <file>` - Read warnings from file
-- `-B <n>` - Number of lines to show before warning (default: 5)
-- `-A <n>` - Number of lines to show after warning (default: 5)
-- `--begin-end-span <n>` - Lines between BEGIN/END for non-function warnings (default: 5)
-- `--backup` - Create backup files before modification (.bak extension)
-- `--filter <pattern>` - Only process warnings matching pattern
-- `--exclude <pattern>` - Skip warnings matching pattern
-- `--color` / `--no-color` - Enable/disable colored output
-- `--summary` - Show summary of changes at the end
-- `--line-ending <auto|lf|crlf>` - Line ending style (default: auto-detect)
-- `--preserve-line-endings` - Maintain original line endings (default behavior)
+- `-i, --input <file>` - Read warnings from file (default: stdin)
+- `-s, --style <style>` - Default suppression style: specific|nextline|block (default: specific)
+- `-n, --non-interactive` - Apply default style to all warnings without prompting
+- `--dry-run` - Show what would be changed without modifying files
+- `--force` - Allow file modifications when input is piped (unsafe)
+- `-h, --help` - Show help message
+
+**Note**: Interactive filtering and statistics features are available during interactive mode using '/' and 't' keys respectively.
 
 ## Non-Functional Requirements
 
@@ -163,43 +239,72 @@ nolint --input warnings.txt -B 10 -A 10
 ## Example Workflow
 
 ```
-$ clang-tidy src/*.cpp | nolint -B 3 -A 3
+$ clang-tidy src/*.cpp | nolint
 
-[1/15] Processing readability-magic-numbers in src/main.cpp:42
+=== Interactive NOLINT Tool ===
+Suppressions: 0 | Use ←→ to navigate, ↑↓ to change style
+Showing 15/15 warnings | Use / to search
 
-    39 | void process_data() {
-    40 |     const int iterations = 100;
-    41 |     for (int i = 0; i < iterations; ++i) {
- >> 42 |         if (data[i] > 75) {  // warning: 75 is a magic number
-    43 |             handle_threshold(data[i]);
-    44 |         }
-    45 |     }
+┌─ Warning 1/15 ─
+│ File: src/main.cpp
+│ Line: 42:15
+│ Type: readability-magic-numbers
+│ Message: 75 is a magic number, consider using a named constant instead
+│
+│     39 | void process_data() {
+│     40 |     const int iterations = 100;
+│     41 |     for (int i = 0; i < iterations; ++i) {
+│ >>  42 |         if (data[i] > 75) {  // NOLINT(readability-magic-numbers)
+│     43 |             handle_threshold(data[i]);
+│     44 |         }
+│     45 |     }
+│
+│ Apply NOLINT? Format: // NOLINT(readability-magic-numbers)
+└─
+Navigate [←→] Style [↑↓] Save & Exit [x] Quit [q] Search [/] Stats [t]: 
 
-Apply NOLINT? Format: // NOLINT(readability-magic-numbers)
-[Y]es / [N]o / [Q]uit / e[X]it+save / [S]ave file / [↑↓] Change format: _
+> →  (Navigate to next warning)
 
-> Y
+┌─ Warning 2/15 ─
+│ File: src/parser.cpp  
+│ Line: 78:10
+│ Type: readability-function-size
+│ Message: function exceeds recommended size/complexity thresholds
+│
+│     75 | // Complex parsing function
+│     76 | // TODO: Consider refactoring
+│     77 |
+│ >>  78 | void Parser::parse_expression(const Token* tokens, size_t count) {
+│    ... | (42 lines skipped)
+│    122 | }
+│
+│ Apply NOLINT? Format: // NOLINTBEGIN(readability-function-size) ... // NOLINTEND(readability-function-size)
+└─
+Navigate [←→] Style [↑↓] Save & Exit [x] Quit [q] Search [/] Stats [t]: 
 
-[2/15] Processing readability-function-size in src/parser.cpp:78
+> t  (Show statistics)
 
-    75 | // Complex parsing function
-    76 | // TODO: Consider refactoring
-    77 |
- >> 78 | void Parser::parse_expression(const Token* tokens, size_t count) {
-    79 |     // note: 44 lines including whitespace and comments (threshold 30)
-    ...
-   122 | }
+=== Warning Type Summary ===
+Total: 15 warnings | Addressed: 2 (13%) | Visited: 2
 
-Apply NOLINT? Format: // NOLINTBEGIN(readability-function-size) ... END
-[Y]es / [N]o / [Q]uit / e[X]it+save / [S]ave file / [↑↓] Change format: _
+┌─────────────────────────────────────┬─────────┬─────────────┬─────────┐
+│ Warning Type                        │  Total  │  Addressed  │ Visited │
+├─────────────────────────────────────┼─────────┼─────────────┼─────────┤
+│ >> readability-function-size        │     3   │    1 (33%)  │    1    │
+│    readability-magic-numbers        │     8   │    1 (13%)  │    1    │
+│    modernize-use-auto               │     4   │    0 (0%)   │    0    │
+└─────────────────────────────────────┴─────────┴─────────────┴─────────┘
 
-> X
+Navigate [↑↓] Filter [Enter] Back [Escape]: 
 
-Saving changes...
-✓ src/main.cpp (1 modification)
-✓ src/parser.cpp (1 modification)
+> Escape  (Return to warnings)
 
-2 files modified, 2 warnings suppressed.
+Navigate [←→] Style [↑↓] Save & Exit [x] Quit [q] Search [/] Stats [t]: 
+
+> x  (Save and exit)
+
+Saving changes and exiting...
+Successfully applied 2 suppressions.
 ```
 
 ## Architecture Philosophy
@@ -239,19 +344,69 @@ The codebase should prioritize **functional programming principles** for improve
 - **RAII essential**: Terminal state must be restored reliably
 - **Single-key input**: Use `tcsetattr()` with `VMIN=1, VTIME=0` for immediate response
 
-##   Implementation Status: COMPLETE
+##   Implementation Status: COMPLETE WITH ADVANCED FEATURES
 
-**All core requirements have been fully implemented:**
--   Interactive review with real-time preview
--   Multiple suppression styles with live cycling
--   Bidirectional navigation with choice memory
--   Search/filter functionality with robust bounds checking
--   Deferred modification with atomic saves
--   Terminal handling with proper state restoration
--   Comprehensive error handling and crash prevention
--   Extensive test coverage (82/82 tests passing)
+**All core requirements plus advanced analysis features have been fully implemented:**
 
-**Production Ready**: The tool is fully functional and ready for daily use managing clang-tidy suppressions.
+### **Core Interactive Features**
+-   **Interactive review** with real-time preview and green NOLINT highlighting
+-   **Multiple suppression styles** with intelligent conditional availability
+-   **Bidirectional navigation** (←/→) with comprehensive choice memory
+-   **Style cycling** (↑/↓) with auto-save and live preview updates
+-   **Save and exit** ('x') with atomic modifications and summary
+-   **Quit with confirmation** ('q') preventing accidental data loss
+
+### **Advanced Analysis and Filtering**
+-   **Warning Type Statistics** ('t' key):
+  - Real-time progress tracking (total, addressed, visited)
+  - Color-coded display (green/yellow/red for completion status)
+  - Interactive navigation with filtering integration
+  - Seamless mode switching with choice preservation
+
+-   **Multi-term Search and Filtering** ('/' key):
+  - Cross-field search (file path, warning type, message, line numbers)
+  - Multi-term AND logic with space-separated terms
+  - Live character echoing in raw terminal mode
+  - Robust bounds checking prevents navigation crashes
+  - Filter status display with real-time counts
+
+### **User Experience and Feedback Requirements**
+-   **Boundary Navigation Feedback**:
+  - Clear messages when at navigation limits: "Already at first warning" / "Already at last warning"
+  - Prevents user confusion and provides immediate feedback
+  - Consistent messaging across all navigation contexts
+
+-   **Filter Application Feedback and Graceful Failure**:
+  - Specific feedback messages for filter operations:
+    - Success: "Applied filter: 'term' - showing X/Y warnings"
+    - No matches: "No warnings match filter 'term' - showing all X warnings" (auto-revert)
+    - Clear: "Filter cleared - showing all X warnings"
+  - Graceful handling of empty filter results with automatic fallback
+  - Real-time count updates in all feedback messages
+
+-   **Data Safety and Exit Confirmation**:
+  - **Quit confirmation** ('q' key): Requires explicit y/n confirmation to prevent accidental data loss
+  - **Save protection**: Changes only applied on explicit save ('x' key) 
+  - **Clear warnings**: "Are you sure you want to quit without saving? [y/n]"
+  - **Graceful cancellation**: User can cancel quit operation and continue working
+
+### **Technical Excellence**
+-   **Functional core architecture** with pure transformation functions
+-   **Comprehensive session state management** with complete persistence
+-   **Terminal handling** with `/dev/tty` support and proper state restoration
+-   **Memory safety** with extensive bounds checking and crash prevention
+-   **Extensive test coverage** with regression testing for critical bugs
+-   **Modern C++20 implementation** with ranges, concepts, and RAII patterns
+
+### **User Experience Excellence**
+-   **Single-key controls** with immediate response (no Enter required)
+-   **Auto-save functionality** preserves all decisions when navigating
+-   **Real-time status indicators** (suppression count, filter status, progress)
+-   **Seamless integration** between warnings, statistics, and search modes
+-   **Comprehensive help** and clear feedback messages
+-   **Choice memory preservation** across all operations and mode switches
+
+**Production Ready**: The tool is fully functional with advanced analysis capabilities and is actively used for comprehensive clang-tidy suppression management with filtering and progress tracking.
 
 ## Future Enhancements (Optional)
 - Configuration file support (`.nolintrc`)

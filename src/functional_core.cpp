@@ -94,7 +94,9 @@ auto apply_modification_to_lines(std::span<const std::string> original_lines,
                 lines_added++;
 
                 // Insert NOLINTEND after end line (adjusted for NOLINTBEGIN insertion)
-                const int end_index = modification.block_end_line.value() + 1;
+                const int end_index
+                    = modification.block_end_line.value()
+                      + 1; // +1 to go after end line, accounting for NOLINTBEGIN shift
                 if (end_index >= 0 && end_index <= static_cast<int>(result.size())) {
                     result.insert(result.begin() + end_index, comments[1]);
                     lines_added++;
@@ -181,11 +183,11 @@ auto find_function_boundaries(std::span<const std::string> file_lines, const War
     // Use function_lines hint if available, otherwise search for closing brace
     int end_line = warning_line;
     if (warning.function_lines.has_value()) {
-        // Use function_lines hint, but add 1 to place NOLINTEND after the closing brace
+        // Use function_lines hint: count from the warning line (function signature)
         // SAFETY: Limit function size to prevent memory exhaustion
         int safe_function_lines = std::min(warning.function_lines.value(), 1000);
-        end_line
-            = std::min(start_line + safe_function_lines, static_cast<int>(file_lines.size()) - 1);
+        end_line = std::min(warning_line + safe_function_lines - 1,
+                            static_cast<int>(file_lines.size()) - 1);
     } else {
         // Simple heuristic: find closing brace that matches function indentation level
         const auto start_indent = extract_indentation(file_lines[start_line]);

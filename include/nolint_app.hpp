@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace nolint {
@@ -24,12 +25,13 @@ struct AppConfig {
 };
 
 enum class UserAction {
-    PREVIOUS,  // '←' - go to previous warning
-    NEXT,      // '→' - go to next warning
-    SAVE_EXIT, // 'x' - save and exit with summary
-    QUIT,      // 'q' - quit without saving (with confirmation)
-    ARROW_KEY, // ↑/↓ - cycle styles (style change handled separately)
-    SEARCH     // '/' - enter search mode
+    PREVIOUS,       // '←' - go to previous warning
+    NEXT,           // '→' - go to next warning
+    SAVE_EXIT,      // 'x' - save and exit with summary
+    QUIT,           // 'q' - quit without saving (with confirmation)
+    ARROW_KEY,      // ↑/↓ - cycle styles (style change handled separately)
+    SEARCH,         // '/' - enter search mode
+    SHOW_STATISTICS // 't' - show warning type statistics
 };
 
 // Consolidate all session state into a single struct
@@ -40,20 +42,30 @@ struct SessionState {
 
     // Warning navigation and choice memory
     std::unordered_map<std::string, NolintStyle> warning_decisions;
+    std::unordered_set<std::string> visited_warnings; // Track which warnings have been displayed
 
     // Search/filter state
     std::string current_filter;
     std::vector<Warning> filtered_warnings;
     std::vector<Warning> original_warnings;
 
+    // Statistics navigation state
+    std::vector<WarningTypeStats> warning_stats;
+    int current_stats_index = 0;
+    bool in_statistics_mode = false;
+
     // Clear all state
     auto reset() -> void {
         file_cache.clear();
         decisions.clear();
         warning_decisions.clear();
+        visited_warnings.clear();
         current_filter.clear();
         filtered_warnings.clear();
         original_warnings.clear();
+        warning_stats.clear();
+        current_stats_index = 0;
+        in_statistics_mode = false;
     }
 };
 
@@ -99,6 +111,11 @@ private:
     auto cycle_style(NolintStyle current, const Warning& warning, bool up) -> NolintStyle;
     auto get_warning_key(const Warning& warning) -> std::string;
     auto count_suppressions() const -> int;
+
+    // Statistics functionality
+    auto calculate_warning_statistics() -> void;
+    auto display_warning_statistics() -> void;
+    auto handle_statistics_navigation() -> UserAction;
 };
 
 } // namespace nolint

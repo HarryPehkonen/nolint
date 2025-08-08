@@ -99,6 +99,7 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
     terminal_->print_line("  x - Save and eXit with summary");
     terminal_->print_line("  q - Quit without saving");
     terminal_->print_line("  / - Search/filter warnings");
+    terminal_->print_line("  t - Show warning Type statistics");
     terminal_->print_line("");
 
     NolintStyle current_style = config_.default_style;
@@ -242,6 +243,32 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
                 // Exit the inner loop to restart the outer loop with proper bounds
                 style_chosen = true;
                 break;
+
+            case UserAction::SHOW_STATISTICS:
+                // Enter statistics mode
+                session_.in_statistics_mode = true;
+                session_.current_stats_index
+                    = 0; // Initialize to first item when entering statistics mode
+                display_warning_statistics();
+
+                // Handle statistics navigation until user exits
+                while (session_.in_statistics_mode) {
+                    auto stats_action = handle_statistics_navigation();
+                    if (stats_action != UserAction::ARROW_KEY) {
+                        break;
+                    }
+                    // If ARROW_KEY returned, we've already handled the display refresh
+                }
+
+                // After statistics mode, adjust current_index if needed (in case filter was
+                // applied)
+                if (current_index >= static_cast<int>(get_active_warnings().size())) {
+                    current_index = std::max(0, static_cast<int>(get_active_warnings().size()) - 1);
+                }
+
+                // Exit the inner loop to restart with main display
+                style_chosen = true;
+                break;
             }
         }
     }
@@ -249,6 +276,9 @@ auto NolintApp::process_warnings(const std::vector<Warning>& warnings) -> void {
 
 auto NolintApp::display_warning(const Warning& warning, size_t index, size_t total,
                                 NolintStyle current_style) -> void {
+
+    // Mark this warning as visited
+    session_.visited_warnings.insert(get_warning_key(warning));
 
     terminal_->print_line("┌─ Warning " + std::to_string(index) + "/" + std::to_string(total)
                           + " ─");
@@ -289,7 +319,8 @@ auto NolintApp::get_user_decision_with_arrows(const Warning& warning, NolintStyl
 
     while (true) {
         terminal_->print("\r\033[2K"); // Return to beginning, then clear line
-        terminal_->print("Navigate [←→] Style [↑↓] Save & Exit [x] Quit [q] Search [/]: ");
+        terminal_->print(
+            "Navigate [←→] Style [↑↓] Save & Exit [x] Quit [q] Search [/] Stats [t]: ");
 
         // Use read_char for immediate single-key response
         char input = terminal_->read_char();
@@ -346,9 +377,12 @@ auto NolintApp::parse_input_char(char c, const Warning& warning, NolintStyle& cu
         return UserAction::QUIT;
     case '/':
         return UserAction::SEARCH;
+    case 't':
+        return UserAction::SHOW_STATISTICS;
     default:
-        terminal_->print_line("Invalid choice. Use ←→ to navigate, ↑↓ to change style, "
-                              "'x' to save & exit, 'q' to quit, '/' to search.");
+        terminal_->print_line(
+            "Invalid choice. Use ←→ to navigate, ↑↓ to change style, "
+            "'x' to save & exit, 'q' to quit, '/' to search, 't' for statistics.");
         return UserAction::ARROW_KEY; // Continue loop
     }
 }
@@ -559,6 +593,189 @@ auto NolintApp::apply_filter(const std::string& filter) -> void {
 auto NolintApp::get_active_warnings() const -> const std::vector<Warning>& {
     return session_.filtered_warnings.empty() ? session_.original_warnings
                                               : session_.filtered_warnings;
+}
+
+auto NolintApp::calculate_warning_statistics() -> void {
+    session_.warning_stats.clear();
+
+    // Use original warnings for statistics (not filtered ones)
+    std::unordered_map<std::string, WarningTypeStats> stats_map;
+
+    for (const auto& warning : session_.original_warnings) {
+        auto& stats = stats_map[warning.warning_type];
+        stats.warning_type = warning.warning_type;
+        stats.total_count++;
+
+        // Check if this warning has been addressed (has NOLINT applied)
+        auto warning_key = get_warning_key(warning);
+        auto decision_it = session_.warning_decisions.find(warning_key);
+        if (decision_it != session_.warning_decisions.end()
+            && decision_it->second != NolintStyle::NONE) {
+            stats.addressed_count++;
+        }
+
+        // Check if this warning has been visited (displayed to user)
+        if (session_.visited_warnings.contains(warning_key)) {
+            stats.visited_count++;
+        }
+    }
+
+    // Convert map to sorted vector (alphabetically by warning type)
+    session_.warning_stats.clear();
+    session_.warning_stats.reserve(stats_map.size());
+
+    for (const auto& [type, stats] : stats_map) {
+        session_.warning_stats.push_back(stats);
+    }
+
+    std::sort(session_.warning_stats.begin(), session_.warning_stats.end(),
+              [](const auto& a, const auto& b) { return a.warning_type < b.warning_type; });
+
+    // Don't reset navigation index - preserve user's current selection
+}
+
+auto NolintApp::display_warning_statistics() -> void {
+    calculate_warning_statistics();
+
+    // Clear screen and display header
+    terminal_->print("\033[2J\033[H"); // Clear screen, move cursor to home
+    terminal_->print_line("=== Warning Type Summary ===");
+
+    // Calculate overall totals
+    int total_warnings = session_.original_warnings.size();
+    int total_addressed = 0;
+    int total_visited = 0;
+
+    for (const auto& stats : session_.warning_stats) {
+        total_addressed += stats.addressed_count;
+        total_visited += stats.visited_count;
+    }
+
+    int addressed_percentage = total_warnings > 0 ? (total_addressed * 100) / total_warnings : 0;
+    terminal_->print_line("Total: " + std::to_string(total_warnings)
+                          + " warnings | Addressed: " + std::to_string(total_addressed) + " ("
+                          + std::to_string(addressed_percentage)
+                          + "%) | Visited: " + std::to_string(total_visited));
+    terminal_->print_line("");
+
+    // Display table header
+    terminal_->print_line(
+        "┌─────────────────────────────────────┬─────────┬─────────────┬─────────┐");
+    terminal_->print_line(
+        "│ Warning Type                        │  Total  │  Addressed  │ Visited │");
+    terminal_->print_line(
+        "├─────────────────────────────────────┼─────────┼─────────────┼─────────┤");
+
+    // Display each warning type with color coding
+    for (size_t i = 0; i < session_.warning_stats.size(); ++i) {
+        const auto& stats = session_.warning_stats[i];
+
+        // Color coding based on addressed percentage
+        std::string color_start = "";
+        std::string color_end = "";
+
+        if (stats.addressed_percentage() == 100) {
+            color_start = "\033[32m"; // Green - fully addressed
+            color_end = "\033[0m";
+        } else if (stats.addressed_percentage() > 0) {
+            color_start = "\033[33m"; // Yellow - partially addressed
+            color_end = "\033[0m";
+        } else {
+            color_start = "\033[31m"; // Red - not addressed
+            color_end = "\033[0m";
+        }
+
+        // Highlight current selection
+        std::string selection_marker
+            = (static_cast<int>(i) == session_.current_stats_index) ? ">> " : "   ";
+
+        // Format the row with proper spacing
+        std::string type_field = stats.warning_type;
+        if (type_field.length() > 33) {
+            type_field = type_field.substr(0, 30) + "...";
+        }
+
+        std::string addressed_text = std::to_string(stats.addressed_count) + " ("
+                                     + std::to_string(stats.addressed_percentage()) + "%)";
+
+        // Manual string formatting instead of std::format
+        std::ostringstream row;
+        row << "│ " << selection_marker << color_start << std::left << std::setw(33) << type_field
+            << color_end << " │ " << std::right << std::setw(5) << stats.total_count << " │ "
+            << std::right << std::setw(9) << addressed_text << " │ " << std::right << std::setw(5)
+            << stats.visited_count << " │";
+        terminal_->print_line(row.str());
+    }
+
+    terminal_->print_line(
+        "└─────────────────────────────────────┴─────────┴─────────────┴─────────┘");
+    terminal_->print_line("");
+    terminal_->print("Navigate [↑↓] Filter [Enter] Back [Escape]: ");
+}
+
+auto NolintApp::handle_statistics_navigation() -> UserAction {
+    while (true) {
+        char input = terminal_->read_char();
+
+        if (input == 0 || input == EOF) {
+            continue;
+        }
+
+        // Handle escape sequences for arrow keys
+        if (input == 27) { // ESC key
+            char next1 = terminal_->read_char();
+            if (next1 == '[') {
+                char arrow = terminal_->read_char();
+                if (arrow == 'A') { // Up arrow
+                    if (session_.current_stats_index > 0) {
+                        session_.current_stats_index--;
+                        display_warning_statistics(); // Refresh display
+                    }
+                    continue;
+                } else if (arrow == 'B') { // Down arrow
+                    if (session_.current_stats_index
+                        < static_cast<int>(session_.warning_stats.size()) - 1) {
+                        session_.current_stats_index++;
+                        display_warning_statistics(); // Refresh display
+                    }
+                    continue;
+                }
+            } else {
+                // Just ESC key - exit statistics mode
+                terminal_->print_line(""); // New line after key press
+                session_.in_statistics_mode = false;
+                return UserAction::ARROW_KEY; // Return to trigger main display refresh
+            }
+        }
+
+        // Handle regular keys
+        char choice = std::tolower(input);
+        terminal_->print_line(""); // New line after key press
+
+        switch (choice) {
+        case '\r':
+        case '\n':
+            // Enter key - filter to selected warning type
+            if (!session_.warning_stats.empty()
+                && session_.current_stats_index < static_cast<int>(session_.warning_stats.size())) {
+
+                apply_filter(session_.warning_stats[session_.current_stats_index].warning_type);
+                session_.in_statistics_mode = false;
+                return UserAction::ARROW_KEY; // Return to trigger main display refresh
+            }
+            break;
+
+        case 27: // ESC
+            // Exit statistics mode
+            session_.in_statistics_mode = false;
+            return UserAction::ARROW_KEY; // Return to trigger main display refresh
+
+        default:
+            terminal_->print_line(
+                "Invalid choice. Use ↑↓ to navigate, Enter to filter, Escape to go back.");
+            break;
+        }
+    }
 }
 
 } // namespace nolint

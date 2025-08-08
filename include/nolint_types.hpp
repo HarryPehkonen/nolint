@@ -53,6 +53,17 @@ struct DisplayContext {
     std::string progress_info;
 };
 
+struct WarningTypeStats {
+    std::string warning_type;
+    int total_count{};
+    int addressed_count{}; // Has NOLINT applied (not NONE)
+    int visited_count{};   // Has been displayed to user
+
+    auto addressed_percentage() const -> int {
+        return total_count > 0 ? (addressed_count * 100) / total_count : 0;
+    }
+};
+
 // C++20 concepts for type safety
 template <typename T>
 concept WarningLike = requires(T t) {
