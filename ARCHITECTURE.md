@@ -30,16 +30,17 @@ The functional core contains all business logic as **pure functions** - function
 
 ```cpp
 namespace functional_core {
-    // Text transformation - core business logic
-    auto apply_modification_to_lines(
-        const std::vector<std::string>& original_lines,
-        const Modification& modification
-    ) -> TextTransformation;
+    // AnnotatedFile creation and manipulation - prevents line number drift
+    auto create_annotated_file(const std::vector<std::string>& lines) -> AnnotatedFile;
+    
+    auto apply_decision(AnnotatedFile& file, const Warning& warning, NolintStyle style) -> void;
+    
+    auto render_annotated_file(const AnnotatedFile& file) -> std::vector<std::string>;
     
     // Context building for UI display
     auto build_display_context(
         const Warning& warning,
-        const std::vector<std::string>& file_lines,
+        const AnnotatedFile& file,
         NolintStyle current_style
     ) -> DisplayContext;
     
@@ -47,15 +48,29 @@ namespace functional_core {
     auto filter_warnings(
         const std::vector<Warning>& warnings,
         const std::string& filter
-    ) -> std::vector<Warning>;
+    ) -> std::vector<size_t>;  // Return indices, not copies
     
-    // NOLINT comment creation
-    auto create_modification(
-        const Warning& warning,
-        NolintStyle style,
-        const std::vector<std::string>& file_lines
-    ) -> Modification;
+    // Text utilities
+    auto extract_indentation(const std::string& line) -> std::string;
 }
+
+// Core data structures that prevent line number drift
+struct AnnotatedLine {
+    std::string text;                            // Original line content
+    std::vector<std::string> before_comments;    // ORDERED: NOLINTBEGIN first, then NOLINTNEXTLINE
+    std::optional<std::string> inline_comment;   // Inline NOLINT
+};
+
+struct BlockSuppression {
+    size_t start_line;      // Original line number (never changes!)
+    size_t end_line;        // Original line number (never changes!)
+    std::string warning_type;
+};
+
+struct AnnotatedFile {
+    std::vector<AnnotatedLine> lines;           // Original structure preserved
+    std::vector<BlockSuppression> blocks;       // NOLINTBEGIN/END pairs
+};
 ```
 
 ### Benefits of Pure Functions
@@ -66,34 +81,104 @@ namespace functional_core {
 4. **Composable**: Functions can be easily combined and reused
 5. **Debuggable**: No hidden state or side effects to track
 
+### AnnotatedFile Approach Benefits
+
+1. **Prevents Line Number Drift**: Original line numbers never change, eliminating bugs from line insertion
+2. **Handles Edge Cases**: NOLINTBEGIN + NOLINTNEXTLINE on same line handled correctly with proper ordering
+3. **Multiple Suppressions**: Can apply multiple suppressions without conflicts
+4. **Pure Transformations**: Rendering is a pure function that can be tested in isolation
+5. **Atomic Operations**: Either all suppressions apply correctly or none do
+
 ## I/O Shell Components
 
 The I/O shell handles all side effects and coordinates with the functional core:
 
-### 1. NolintApp (Main Orchestrator)
+### 1. Interactive UI with Functional Reactive Architecture
+
+**Recommended Architecture: Model-View-Update Pattern (Elm Architecture)**
+
+The interactive UI should implement a functional reactive architecture with:
+- **Immutable state model** representing the complete UI state
+- **Pure update functions** that transform state based on input events  
+- **Explicit render cycle** that displays the current state after every update
+- **Unidirectional data flow**: Input → Update → Render → Repeat
+
 ```cpp
+// Immutable state model containing ALL UI state
+struct UIModel {
+    std::vector<Warning> warnings;
+    std::vector<Warning> filtered_warnings;
+    int current_index = 0;
+    NolintStyle current_style = NolintStyle::NONE;
+    std::string current_filter;
+    std::unordered_map<std::string, NolintStyle> warning_decisions;
+    std::unordered_set<std::string> visited_warnings;
+    bool in_statistics_mode = false;
+    int current_stats_index = 0;
+    std::vector<WarningTypeStats> warning_stats;
+};
+
+// Input events (all possible user actions)
+enum class InputEvent {
+    ARROW_UP, ARROW_DOWN,           // Style cycling
+    ARROW_LEFT, ARROW_RIGHT,       // Navigation  
+    SAVE_EXIT, QUIT,               // Exit actions
+    SEARCH, SHOW_STATISTICS,       // Mode changes
+    ESCAPE, ENTER                  // Mode navigation
+};
+
+// Pure state transition function
+auto update(const UIModel& current, const InputEvent& event) -> UIModel {
+    UIModel next = current;  // Copy current state
+    
+    switch (event) {
+        case InputEvent::ARROW_UP:
+            next.current_style = cycle_style_up(current.current_style);
+            break;
+        case InputEvent::ARROW_RIGHT:
+            if (current.current_index < static_cast<int>(get_active_warnings(current).size()) - 1) {
+                next.current_index++;
+            }
+            break;
+        // ... other pure state transitions
+    }
+    
+    return next;  // Return new immutable state
+}
+
+// Explicit render function (no hidden state changes)
+auto render(const UIModel& model) -> void {
+    display_warning_context(model);
+    display_status_line(model);
+    display_controls();
+}
+
+// Simple main loop - no nested loops!
 class NolintApp {
-private:
-    std::unique_ptr<IWarningParser> parser_;
-    std::unique_ptr<IFileSystem> filesystem_;
-    std::unique_ptr<ITerminal> terminal_;
-    
-    // Decision tracking (deferred modifications)
-    std::unordered_map<std::string, NolintStyle> warning_decisions_;
-    
 public:
-    auto run(const AppConfig& config) -> int;
-    auto process_warnings(const std::vector<Warning>& warnings) -> void;
+    auto run_interactive() -> void {
+        UIModel model = initialize_model();
+        
+        while (true) {
+            render(model);                           // Explicit render
+            auto input = terminal_->get_input();     // Get input
+            model = update(model, input);            // Pure state update
+            
+            if (should_exit(model)) break;
+        }
+    }
 };
 ```
 
-**Responsibilities**:
-- Coordinate between all components
-- Track user decisions with choice memory
-- Manage deferred modifications until save
-- Handle user navigation and interaction flow
+**Benefits of This Architecture:**
+- **No hidden state mutations** - all state changes explicit and traceable
+- **No complex nested loops** - simple Input → Update → Render cycle
+- **Predictable behavior** - same input always produces same state transition
+- **Easy testing** - pure update functions can be tested in isolation
+- **Clear separation** - rendering separate from state management
 
-### 2. Terminal I/O (`terminal_io.hpp`)
+### 2. Terminal I/O (`terminal_io.hpp`) - Adapted for Functional Reactive UI
+
 ```cpp
 class Terminal : public ITerminal {
 private:
@@ -102,31 +187,38 @@ private:
     struct termios original_termios_;   // RAII terminal restoration
     
 public:
-    auto read_char() -> char override;  // Single-key input
-    auto read_line() -> std::string override;  // Search input with echo
+    // Simplified input for functional reactive pattern
+    auto get_input_event() -> InputEvent override;  // Maps keys to events
+    auto display_model(const UIModel& model) -> void override;  // Pure rendering
     auto is_interactive() -> bool override;    // Capability detection
 };
 ```
 
-**Responsibilities**:
-- Handle piped input with `/dev/tty` fallback
-- Raw terminal mode for single-key navigation
-- Perfect terminal state restoration (RAII)
-- Character echoing for search input visibility
+**Responsibilities for Functional Reactive Architecture**:
+- **Input abstraction**: Convert raw key presses to semantic `InputEvent`s
+- **Pure rendering**: Display UI state without modifying it  
+- **Terminal management**: Handle raw mode and restoration (RAII)
+- **Event mapping**: Translate terminal codes to application events
 
-### 3. File System (`file_io.hpp`)
+**Key Design Change**: Instead of complex terminal state management mixed with UI logic, the terminal becomes a pure input/output adapter that works with the Model-View-Update cycle.
+
+### 3. File System (`file_io.hpp`) - AnnotatedFile Integration
 ```cpp
 class FileSystem : public IFileSystem {
 public:
-    auto read_file(const std::string& path) -> std::vector<std::string> override;
-    auto write_file(const std::string& path, std::span<const std::string> lines) -> bool override;
+    auto read_file_to_annotated(const std::string& path) -> AnnotatedFile override;
+    auto write_annotated_file(const AnnotatedFile& file, const std::string& path) -> bool override;
+private:
+    auto write_lines_atomic(const std::vector<std::string>& lines, const std::string& path) -> bool;
 };
 ```
 
 **Responsibilities**:
-- Atomic file operations
+- Convert between disk files and AnnotatedFile structures
+- Atomic file operations using render_annotated_file()
 - Line ending preservation
 - Error handling for inaccessible files
+- Ensures suppression ordering is maintained on disk
 
 ### 4. Warning Parser (`warning_parser.hpp`)
 ```cpp
@@ -198,30 +290,56 @@ class Terminal {
 - Exception-safe resource management
 - No terminal corruption even on crashes
 
-## Data Flow
+## Data Flow with Functional Reactive Architecture
 
-### 1. Input Processing
+### 1. Initialization
 ```
-clang-tidy output → WarningParser → std::vector<Warning>
-                                          ↓
-FileSystem ← NolintApp ← filtered warnings
+clang-tidy output → WarningParser → std::vector<Warning> → UIModel (immutable)
 ```
 
-### 2. Interactive Processing
+### 2. Interactive Loop (Model-View-Update Cycle)
 ```
-Warning + File Lines → functional_core::build_display_context → DisplayContext
-                                          ↓
-Terminal ← NolintApp ← User Decision (with choice memory)
-                                          ↓
-functional_core::create_modification → Modification (deferred)
+UIModel → render(model) → Display Current State
+    ↑                           ↓
+    |                    User Input (keys)
+    |                           ↓
+    |              get_input_event() → InputEvent
+    |                           ↓
+    ←─── update(model, event) ── Pure State Transformation
+         (returns new UIModel)
 ```
 
-### 3. Final Application
+### 3. State Transitions (Pure Functions)
 ```
-All Decisions → functional_core::apply_modification_to_lines → Modified Lines
-                                          ↓
-FileSystem ← Atomic Write Operations
+Current UIModel + InputEvent → update() → New UIModel
+                                   ↓
+              functional_core transformations (if needed)
+                                   ↓
+                          Updated immutable state
 ```
+
+### 4. Final Application (on exit)
+```
+Final Decisions → apply_to_annotated_files() → render_annotated_file() → FileSystem
+```
+
+**Critical Edge Case Handling:**
+```
+Warning A: NOLINT_BLOCK (lines 10-20) + Warning B: NOLINTNEXTLINE (line 10)
+                                    ↓
+apply_decision() maintains proper order:
+1. NOLINTBEGIN (from Warning A) - block starts
+2. NOLINTNEXTLINE (from Warning B) - specific line suppression  
+3. Target code line 10
+4. ... lines 11-19 ...
+5. NOLINTEND (from Warning A) - block ends at line 20
+```
+
+**Key Benefits of This Flow:**
+- **Single source of truth**: All state in UIModel
+- **Predictable updates**: Same input always produces same state change
+- **Easy debugging**: State transitions are pure and traceable
+- **No race conditions**: Immutable state prevents concurrent modification issues
 
 ## Testing Strategy
 

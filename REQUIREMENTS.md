@@ -3,7 +3,7 @@
 ## Overview
 `nolint` is a command-line tool that automatically applies `// NOLINT` comments to C++ source code based on clang-tidy warnings. It provides an interactive interface for reviewing and selectively suppressing linting warnings.
 
-**  FULLY IMPLEMENTED**: All requirements below have been successfully implemented and are working in production. The tool features comprehensive interactive capabilities, robust error handling, and extensive test coverage (82/82 tests passing).
+**  TARGET REQUIREMENTS**: All requirements below define the target functionality for the rewritten system. The implementation will feature comprehensive interactive capabilities, robust error handling, and extensive test coverage.
 
 ## Functional Requirements
 
@@ -309,10 +309,198 @@ Successfully applied 2 suppressions.
 
 ## Architecture Philosophy
 
-### **Functional Programming Approach**  
-The codebase should prioritize **functional programming principles** for improved testability and maintainability:
+### **Functional Reactive Architecture for Interactive UI**
 
-1. **Pure Functions for Core Logic**:
+The interactive UI should implement a **Model-View-Update pattern** (functional reactive architecture) with:
+
+#### **1. Immutable State Model**
+All UI state must live in a single immutable struct:
+```cpp
+struct UIModel {
+    std::vector<Warning> warnings;
+    int current_index = 0;
+    NolintStyle current_style = NolintStyle::NONE;
+    std::unordered_map<std::string, NolintStyle> warning_decisions;
+    std::string current_filter;
+    bool in_statistics_mode = false;
+    bool should_save_and_exit = false;
+    // ... all other UI state
+};
+```
+
+#### **2. Pure State Transitions**  
+Update functions must be pure - same input always produces same output:
+```cpp
+auto update(const UIModel& current, const InputEvent& event) -> UIModel {
+    UIModel next = current;  // Copy current state (immutable)
+    
+    switch (event) {
+        case InputEvent::ARROW_RIGHT:
+            if (current.current_index < warnings.size() - 1) {
+                next.current_index++;
+            }
+            break;
+        // ... other pure state transitions
+    }
+    
+    return next;  // Return new immutable state
+}
+```
+
+#### **3. Explicit Rendering**
+Render function must display current state without modifying it:
+```cpp
+auto render(const UIModel& model) -> void {
+    // Pure rendering - no state changes!
+    display_warning_context(model);
+    display_status_line(model);
+    display_controls(model);
+}
+```
+
+#### **4. Unidirectional Data Flow**
+Main loop must follow strict Input → Update → Render cycle:
+```cpp
+auto run_interactive() -> void {
+    UIModel model = initialize_model();
+    
+    while (!should_exit(model)) {
+        render(model);                              // 1. Explicit render
+        auto input_event = terminal_->get_input();  // 2. Get input event  
+        model = update(model, input_event);         // 3. Pure state update
+        // Repeat cycle - no nested loops!
+    }
+}
+```
+
+### **Benefits of This Architecture:**
+- **No hidden state mutations** scattered across functions
+- **No complex nested loops** with unclear refresh timing  
+- **No state synchronization bugs** between display and model
+- **Predictable behavior** - same input always produces same state transition
+- **Easy testing** - pure update functions can be tested in isolation
+- **Clear separation** - rendering completely separate from state management
+
+## Critical Edge Case Requirements
+
+### **Multiple Suppressions on Same Line**
+
+**REQUIREMENT**: When both NOLINT_BLOCK and NOLINTNEXTLINE target the same line, the system MUST maintain correct ordering to prevent suppression failures.
+
+**Correct Order** (MANDATORY):
+1. `NOLINTBEGIN` comment (starts block)
+2. `NOLINTNEXTLINE` comment (suppresses next line)  
+3. Target code line (both suppressions active)
+4. Subsequent lines (only block suppression active)
+5. `NOLINTEND` comment (ends block)
+
+**Example Requirement**:
+```cpp
+// Given these user decisions:
+// Warning A: readability-function-size (function lines 10-20) → NOLINT_BLOCK
+// Warning B: readability-magic-numbers (line 10) → NOLINTNEXTLINE
+
+// System MUST generate:
+// NOLINTBEGIN(readability-function-size)    ← FIRST
+// NOLINTNEXTLINE(readability-magic-numbers) ← SECOND  
+void big_function() {  // Line 10 - both suppressions work
+    int x = 42;        // Line 11 - only block suppression active
+    // ...
+}
+// NOLINTEND(readability-function-size)
+
+// System MUST NOT generate:
+// NOLINTNEXTLINE(readability-magic-numbers) ← WRONG ORDER
+// NOLINTBEGIN(readability-function-size)    ← Would break NOLINTNEXTLINE
+```
+
+### **AnnotatedFile Architecture Requirement**
+
+**REQUIREMENT**: Use AnnotatedFile model to prevent line number drift and handle edge cases.
+
+```cpp
+// REQUIRED data structures:
+struct AnnotatedLine {
+    std::string text;                            // Original line content
+    std::vector<std::string> before_comments;    // ORDERED: NOLINTBEGIN first, NOLINTNEXTLINE second
+    std::optional<std::string> inline_comment;   // Inline NOLINT
+};
+
+struct BlockSuppression {
+    size_t start_line;      // Original line number (immutable)
+    size_t end_line;        // Original line number (immutable) 
+    std::string warning_type;
+};
+
+struct AnnotatedFile {
+    std::vector<AnnotatedLine> lines;           // Original structure preserved
+    std::vector<BlockSuppression> blocks;       // NOLINTBEGIN/END pairs
+};
+```
+
+**REQUIREMENT**: Pure render function with mandatory ordering:
+```cpp
+auto render_annotated_file(const AnnotatedFile& file) -> std::vector<std::string> {
+    // MUST follow this exact order for each line:
+    // 1. NOLINTBEGIN blocks (if any start at this line)
+    // 2. NOLINTNEXTLINE comments (if any target this line)
+    // 3. Original code line (with optional inline NOLINT)
+    // 4. NOLINTEND blocks (if any end at this line)
+}
+```
+
+### **Test Requirements for Edge Cases**
+
+**MANDATORY TEST**: Multiple suppressions same line
+```cpp
+TEST(EdgeCases, NolintBlockPlusNolintnextlineSameLine) {
+    AnnotatedFile file = create_test_file();
+    
+    // Apply NOLINT_BLOCK for function
+    apply_decision(file, warning_function_size, NolintStyle::NOLINT_BLOCK);
+    
+    // Apply NOLINTNEXTLINE for same line
+    apply_decision(file, warning_magic_numbers, NolintStyle::NOLINTNEXTLINE);
+    
+    auto rendered = render_annotated_file(file);
+    
+    // MUST have correct order
+    EXPECT_THAT(rendered, Contains("// NOLINTBEGIN(readability-function-size)"));
+    EXPECT_THAT(rendered, Contains("// NOLINTNEXTLINE(readability-magic-numbers)"));
+    
+    // NOLINTBEGIN must come before NOLINTNEXTLINE
+    auto begin_pos = find_line_containing(rendered, "NOLINTBEGIN");
+    auto next_pos = find_line_containing(rendered, "NOLINTNEXTLINE");
+    EXPECT_LT(begin_pos, next_pos);
+}
+```
+
+**MANDATORY TEST**: Line number drift prevention
+```cpp
+TEST(EdgeCases, NoLineNumberDrift) {
+    AnnotatedFile file = create_large_test_file(100);  // 100 lines
+    
+    // Apply many suppressions
+    for (int i = 0; i < 50; ++i) {
+        apply_decision(file, create_warning(i * 2), random_style());
+    }
+    
+    auto rendered = render_annotated_file(file);
+    auto original_lines = extract_non_comment_lines(rendered);
+    
+    // Original line count must be preserved
+    EXPECT_EQ(original_lines.size(), 100);
+    
+    // Original content must be unchanged  
+    EXPECT_EQ(original_lines[0], file.lines[0].text);
+    EXPECT_EQ(original_lines[99], file.lines[99].text);
+}
+```
+
+### **Functional Programming for Core Logic**  
+The text processing core should remain purely functional:
+
+1. **Pure Functions for Business Logic**:
    - Text transformations: `apply_modification_to_lines(lines, modification) -> transformed_lines`
    - Warning analysis: `find_function_boundaries(file_lines, warning) -> (start, end)`  
    - Context building: `build_context(warning, file_lines, style) -> context`
@@ -322,7 +510,7 @@ The codebase should prioritize **functional programming principles** for improve
    ```
    ┌─────────────────────────────────────────┐
    │           I/O Shell                     │  <- Side effects, minimal testing
-   │  ┌─────────────────────────────────────┐ │  
+   │  ┌─────────────────────────────────────┐ │  <- Functional Reactive UI  
    │  │     **Functional Core**             │ │  <- Pure functions, extensive testing
    │  │  • Text transformations             │ │  
    │  │  • Warning processing               │ │  
@@ -332,8 +520,8 @@ The codebase should prioritize **functional programming principles** for improve
    ```
 
 3. **Testing Benefits**:
-   - **No mocking needed** for core business logic
-   - **Fast tests** (no I/O operations)
+   - **No mocking needed** for core business logic or UI state transitions
+   - **Fast tests** (no I/O operations)  
    - **Deterministic behavior** (no hidden state)
    - **Easy edge case testing** (pure input → output)
 

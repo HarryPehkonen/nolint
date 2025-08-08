@@ -4,7 +4,7 @@
 
 This document covers the technical implementation specifics of `nolint`. For architectural design and patterns, see `ARCHITECTURE.md`.
 
-**Current Status**: Production-ready with comprehensive functionality, robust error handling, and extensive test coverage (82/82 tests passing).
+**Target Status**: Production-ready with comprehensive functionality, robust error handling, and extensive test coverage.
 
 ## Implementation Overview
 
@@ -95,52 +95,140 @@ struct Warning {
 - **State machine**: Maintain state between lines to associate notes with warnings
 - **Error handling**: Skip malformed lines, continue processing
 
-### 2. File Manager -   **Successfully Implemented**
+### 2. File Manager - **Recommended: AnnotatedFile Model**
 
-**Current Implementation Strengths**:
-- **Clean separation**: I/O operations separated from business logic
-- **Functional core integration**: Uses pure functions for all transformations
-- **Easy testing**: Business logic tested without mocking
-- **Atomic operations**: Safe file modifications with proper error handling
+**Critical Design Decision**: Use AnnotatedFile to prevent line number drift and handle complex edge cases.
 
 ```cpp
-//   Successfully Implemented Design
-class FileManager {
-    // Clean I/O coordination - no business logic
-    std::unique_ptr<IFileSystem> filesystem_;
-    std::unordered_map<std::string, std::vector<std::string>> file_cache_;
-    
-public:
-    // Delegates to functional core for all transformations
-    auto load_file(const std::string& path) -> std::vector<std::string>;
-    auto save_file(const std::string& path, std::span<const std::string> lines) -> bool;
+//   Recommended: AnnotatedFile Design - Prevents Line Number Drift
+struct AnnotatedLine {
+    std::string text;                            // Original line content
+    std::vector<std::string> before_comments;    // ORDERED: NOLINTBEGIN first, then NOLINTNEXTLINE  
+    std::optional<std::string> inline_comment;   // Inline NOLINT
 };
 
-// Business logic in functional core (implemented)
+struct BlockSuppression {
+    size_t start_line;      // Original line number (never changes!)
+    size_t end_line;        // Original line number (never changes!)
+    std::string warning_type;
+};
+
+struct AnnotatedFile {
+    std::vector<AnnotatedLine> lines;           // Original structure preserved
+    std::vector<BlockSuppression> blocks;       // NOLINTBEGIN/END pairs
+};
+
+// Pure transformation functions
 namespace functional_core {
-    struct TextTransformation {
-        std::vector<std::string> lines;
-        int lines_added;
-        int lines_removed;
-    };
+    //   Create AnnotatedFile from raw text
+    auto create_annotated_file(const std::vector<std::string>& lines) -> AnnotatedFile {
+        AnnotatedFile file;
+        for (const auto& line : lines) {
+            file.lines.push_back({.text = line});
+        }
+        return file;
+    }
     
-    //   Implemented: Pure function - no state, no side effects
-    auto apply_modification_to_lines(
-        const std::vector<std::string>& original_lines,
-        const Modification& modification
-    ) -> TextTransformation;
+    //   Apply decision with proper edge case ordering
+    auto apply_decision(AnnotatedFile& file, const Warning& warning, NolintStyle style) -> void {
+        switch (style) {
+            case NolintStyle::NOLINT_SPECIFIC:
+                file.lines[warning.line_number].inline_comment = 
+                    "// NOLINT(" + warning.warning_type + ")";
+                break;
+                
+            case NolintStyle::NOLINTNEXTLINE:
+                // Add AFTER any potential NOLINTBEGIN comments
+                file.lines[warning.line_number].before_comments.push_back(
+                    "// NOLINTNEXTLINE(" + warning.warning_type + ")"
+                );
+                break;
+                
+            case NolintStyle::NOLINT_BLOCK:
+                file.blocks.push_back({
+                    .start_line = warning.block_start,
+                    .end_line = warning.block_end,
+                    .warning_type = warning.warning_type
+                });
+                break;
+        }
+    }
     
-    //   Implemented: Compose multiple modifications
-    auto apply_modifications_to_lines(
-        const std::vector<std::string>& original_lines,
-        const std::vector<Modification>& modifications
-    ) -> TextTransformation;
+    //   Render with critical edge case handling
+    auto render_annotated_file(const AnnotatedFile& file) -> std::vector<std::string> {
+        std::vector<std::string> output;
+        
+        for (size_t i = 0; i < file.lines.size(); ++i) {
+            // 1. CRITICAL: NOLINTBEGIN blocks first (highest priority)
+            for (const auto& block : file.blocks) {
+                if (block.start_line == i) {
+                    output.push_back("// NOLINTBEGIN(" + block.warning_type + ")");
+                }
+            }
+            
+            // 2. CRITICAL: NOLINTNEXTLINE second (must come after NOLINTBEGIN)
+            for (const auto& comment : file.lines[i].before_comments) {
+                output.push_back(comment);
+            }
+            
+            // 3. Original line with optional inline comment
+            auto line = file.lines[i].text;
+            if (file.lines[i].inline_comment) {
+                line += "  " + *file.lines[i].inline_comment;
+            }
+            output.push_back(line);
+            
+            // 4. NOLINTEND blocks last
+            for (const auto& block : file.blocks) {
+                if (block.end_line == i) {
+                    output.push_back("// NOLINTEND(" + block.warning_type + ")");
+                }
+            }
+        }
+        return output;
+    }
 }
 ```
 
-### 3. NOLINT Formatter -   **Successfully Implemented**
+### 3. Critical Edge Case: Multiple Suppressions on Same Line
 
-**Key Achievement**: All formatting logic implemented as pure functions with comprehensive test coverage.
+**The Problem**: When both NOLINT_BLOCK and NOLINTNEXTLINE target the same line, incorrect ordering breaks suppressions.
+
+**Example Edge Case**:
+```cpp
+// User decisions:
+// Warning 1: readability-function-size (lines 10-20) → NOLINT_BLOCK  
+// Warning 2: readability-magic-numbers (line 10) → NOLINTNEXTLINE
+
+// CORRECT rendering (AnnotatedFile approach):
+// NOLINTBEGIN(readability-function-size)    ← Block starts FIRST
+// NOLINTNEXTLINE(readability-magic-numbers) ← Specific suppression SECOND  
+void big_function() {  // Line 10 - both suppressions active
+    int x = 42;        // Line 11 - only block suppression active
+    // ... more lines ...
+}  // Line 20
+// NOLINTEND(readability-function-size)      ← Block ends
+
+// WRONG rendering (naive approach):
+// NOLINTNEXTLINE(readability-magic-numbers) ← Would suppress line below!
+// NOLINTBEGIN(readability-function-size)    ← Block starts from here
+void big_function() {  // Line 10 - NOLINTNEXTLINE was wasted on NOLINTBEGIN!
+```
+
+**Why AnnotatedFile Solves This**:
+```cpp
+// When applying Warning 1 (NOLINT_BLOCK):
+file.blocks.push_back({.start_line = 10, .end_line = 20, .warning_type = "readability-function-size"});
+
+// When applying Warning 2 (NOLINTNEXTLINE):  
+file.lines[10].before_comments.push_back("// NOLINTNEXTLINE(readability-magic-numbers)");
+
+// render_annotated_file() ensures correct order:
+// 1. NOLINTBEGIN blocks first (from file.blocks)
+// 2. NOLINTNEXTLINE comments second (from file.lines[i].before_comments) 
+// 3. Original code line
+// 4. NOLINTEND blocks last
+```
 
 ```cpp
 enum class NolintStyle {
@@ -576,98 +664,196 @@ auto NolintApp::display_filter_status() -> void {
 }
 ```
 
-### 6. Interactive UI -   **Successfully Implemented**
+### 6. Interactive UI - **Recommended: Functional Reactive Architecture**
 
-**Key Achievement**: Complex terminal I/O mastered with functional display logic and robust state management.
+**Key Recommendation**: Implement interactive UI using **Model-View-Update pattern** (functional reactive architecture) to eliminate complexity and improve maintainability.
 
 ```cpp
-//   Successfully Implemented: Functional display logic  
-namespace functional_core {
-    //   Implemented: Pure function for building display context
-    auto build_display_context(
-        const Warning& warning,
-        const std::vector<std::string>& file_lines,
-        NolintStyle current_style
-    ) -> DisplayContext;
+//   Recommended: Functional Reactive Architecture (Model-View-Update)
+namespace functional_reactive_ui {
     
-    //   Implemented: Warning filtering and search
-    auto filter_warnings(
-        const std::vector<Warning>& warnings,
-        const std::string& filter
-    ) -> std::vector<Warning>;
-    
-    //   Implemented: NOLINT comment highlighting
-    auto highlight_nolint_comments(const std::string& line) -> std::string;
-}
-
-//   Successfully Implemented: I/O Shell with robust terminal handling
-class NolintApp {
-    // Complete session state management
-    SessionState session_;
-    
-public:
-    enum class UserAction {
-        PREVIOUS,       // ← arrow - go to previous warning
-        NEXT,           // → arrow - go to next warning  
-        SAVE_EXIT,      // x key - save and exit with summary
-        QUIT,           // q key - quit without saving (with confirmation)
-        ARROW_KEY,      // ↑↓ arrows - cycle styles (style change handled separately)
-        SEARCH,         // / key - enter search mode
-        SHOW_STATISTICS // t key - show warning type statistics
-    };
-    
-    //   Implemented: Comprehensive session state
-    struct SessionState {
-        // File management
-        std::unordered_map<std::string, std::vector<std::string>> file_cache;
-        std::vector<std::pair<Warning, NolintStyle>> decisions;
+    // Immutable state model - ALL UI state in one place
+    struct UIModel {
+        // Core warning data
+        std::vector<Warning> warnings;
+        std::vector<Warning> filtered_warnings;
+        int current_index = 0;
         
-        // Warning navigation and choice memory
+        // Current selections and decisions
+        NolintStyle current_style = NolintStyle::NONE;
         std::unordered_map<std::string, NolintStyle> warning_decisions;
         std::unordered_set<std::string> visited_warnings;
         
-        // Search/filter state
+        // Filter/search state
         std::string current_filter;
-        std::vector<Warning> filtered_warnings;
-        std::vector<Warning> original_warnings;
         
-        // Statistics navigation state
-        std::vector<WarningTypeStats> warning_stats;
-        int current_stats_index = 0;
+        // Statistics mode state
         bool in_statistics_mode = false;
+        int current_stats_index = 0;
+        std::vector<WarningTypeStats> warning_stats;
+        
+        // Exit state
+        bool should_save_and_exit = false;
+        bool should_quit = false;
+        
+        // Helper: Get active warnings (filtered or original)
+        const std::vector<Warning>& get_active_warnings() const {
+            return filtered_warnings.empty() ? warnings : filtered_warnings;
+        }
     };
     
-    //   Implemented: Complete navigation with choice memory and statistics
-    auto process_warnings(const std::vector<Warning>& warnings) -> void;
-    auto calculate_warning_statistics() -> void;
-    auto display_warning_statistics() -> void;
-    auto handle_statistics_navigation() -> UserAction;
-    auto handle_search_input() -> void;
-    auto apply_filter(const std::string& filter) -> void;
-};
+    // All possible input events
+    enum class InputEvent {
+        ARROW_UP, ARROW_DOWN,           // Style cycling
+        ARROW_LEFT, ARROW_RIGHT,       // Warning navigation
+        SAVE_EXIT, QUIT,               // Exit commands
+        SEARCH, SHOW_STATISTICS,       // Mode switches
+        ESCAPE, ENTER,                 // Mode navigation
+        UNKNOWN                        // Invalid input
+    };
+    
+    // Pure state transition function - no side effects!
+    auto update(const UIModel& current, const InputEvent& event) -> UIModel {
+        UIModel next = current;  // Copy current state (immutable)
+        
+        switch (event) {
+            case InputEvent::ARROW_UP:
+                next.current_style = cycle_style_up(current.current_style, current.warnings[current.current_index]);
+                break;
+                
+            case InputEvent::ARROW_DOWN:
+                next.current_style = cycle_style_down(current.current_style, current.warnings[current.current_index]);
+                break;
+                
+            case InputEvent::ARROW_RIGHT:
+                // Save current decision and move to next
+                next.warning_decisions[get_warning_key(current.warnings[current.current_index])] = current.current_style;
+                if (current.current_index < static_cast<int>(current.get_active_warnings().size()) - 1) {
+                    next.current_index++;
+                    next.current_style = get_previous_decision_or_default(next, next.current_index);
+                }
+                break;
+                
+            case InputEvent::ARROW_LEFT:
+                // Save current decision and move to previous
+                next.warning_decisions[get_warning_key(current.warnings[current.current_index])] = current.current_style;
+                if (current.current_index > 0) {
+                    next.current_index--;
+                    next.current_style = get_previous_decision_or_default(next, next.current_index);
+                }
+                break;
+                
+            case InputEvent::SAVE_EXIT:
+                next.should_save_and_exit = true;
+                break;
+                
+            case InputEvent::QUIT:
+                next.should_quit = true;
+                break;
+                
+            case InputEvent::SHOW_STATISTICS:
+                next.in_statistics_mode = !current.in_statistics_mode;
+                if (next.in_statistics_mode) {
+                    next.warning_stats = calculate_statistics(current);
+                    next.current_stats_index = 0;
+                }
+                break;
+                
+            case InputEvent::SEARCH:
+                // Transition to search mode handled by render function
+                break;
+                
+            // Statistics mode navigation
+            case InputEvent::ARROW_UP when current.in_statistics_mode:
+                if (current.current_stats_index > 0) {
+                    next.current_stats_index--;
+                }
+                break;
+                
+            case InputEvent::ARROW_DOWN when current.in_statistics_mode:
+                if (current.current_stats_index < static_cast<int>(current.warning_stats.size()) - 1) {
+                    next.current_stats_index++;
+                }
+                break;
+                
+            case InputEvent::ENTER when current.in_statistics_mode:
+                // Apply filter for selected warning type
+                next = apply_filter(current, current.warning_stats[current.current_stats_index].warning_type);
+                next.in_statistics_mode = false;
+                break;
+                
+            case InputEvent::ESCAPE:
+                next.in_statistics_mode = false;
+                break;
+        }
+        
+        // Mark current warning as visited
+        if (!next.get_active_warnings().empty() && next.current_index < static_cast<int>(next.get_active_warnings().size())) {
+            next.visited_warnings.insert(get_warning_key(next.get_active_warnings()[next.current_index]));
+        }
+        
+        return next;  // Return new immutable state
+    }
+    
+    // Pure render function - displays state without changing it
+    auto render(const UIModel& model) -> void {
+        clear_screen();
+        
+        if (model.in_statistics_mode) {
+            render_statistics_mode(model);
+        } else {
+            render_warning_mode(model);
+        }
+        
+        render_status_line(model);
+        render_controls(model);
+    }
+    
+    // Simple main loop - no nested loops!
+    class ReactiveNolintApp {
+    public:
+        auto run_interactive() -> void {
+            UIModel model = initialize_model();
+            
+            while (!model.should_save_and_exit && !model.should_quit) {
+                render(model);                              // Explicit render
+                auto input_event = terminal_->get_input();  // Get semantic event
+                model = update(model, input_event);         // Pure state update
+            }
+            
+            if (model.should_save_and_exit) {
+                save_decisions(model.warning_decisions);
+            }
+        }
+    };
+}
 ```
 
-**Critical UI Implementation Successes**:
+**Benefits of Functional Reactive Architecture**:
 
-1.   **Terminal Raw Mode Mastered**:
-   - Successfully opens `/dev/tty` in read/write mode (`"r+"`)
-   - Uses `tcsetattr()` with `VMIN=1, VTIME=0` for immediate key response
-   - RAII pattern ensures perfect terminal state restoration
-   - Works reliably on Unix/Linux/macOS platforms
+1.   **Eliminates Complex State Management**:
+   - All state lives in a single immutable `UIModel` struct
+   - No scattered state mutations across multiple functions
+   - State transitions are pure and predictable
 
-2.   **Context Rebuilding Implemented**:
-   - Arrow keys change style with real-time context rebuilding for NOLINT_BLOCK
-   - NOLINT_BLOCK correctly shows function boundaries with proper context
-   - Progress information preserved across all rebuilds and navigation
+2.   **Simplifies Control Flow**:
+   - Replaces complex nested loops with simple `Input → Update → Render` cycle
+   - No hidden refresh timing issues
+   - Clear separation between input handling, state updates, and rendering
 
-3.   **Advanced Display Features**:
-   - Shows actual code transformation with integrated NOLINT comments
-   - Green highlighting makes NOLINT comments immediately visible
-   - Real-time preview updates as user cycles through styles
+3.   **Improves Testability**:
+   - Pure `update()` function can be tested in isolation with no mocking
+   - State transitions are deterministic and easy to verify
+   - Render function takes immutable state, making display logic testable
 
-**Terminal I/O Successfully Implemented**:
+4.   **Prevents State Synchronization Bugs**:
+   - Single source of truth eliminates inconsistencies
+   - Immutable state prevents accidental mutations
+   - Explicit state updates make behavior predictable
+
+**Terminal I/O Adapted for Functional Reactive UI**:
 ```cpp
-//   Production-ready terminal handling with signal safety
+//   Simplified terminal handling for Model-View-Update pattern
 class Terminal : public ITerminal {
     FILE* tty_file_ = nullptr;
     bool use_tty_ = false;

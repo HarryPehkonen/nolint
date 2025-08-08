@@ -68,11 +68,43 @@ clang-tidy src/*.cpp -- -std=c++20 | ./nolint
 
 ## Architecture
 
-Built with a **Functional Core / I/O Shell** design using modern C++20:
+Built with a **Functional Core / I/O Shell** design using modern C++20 with **Functional Reactive UI**:
+
+### **Interactive UI: Model-View-Update Pattern**
+The interactive interface uses a **functional reactive architecture**:
+- **Immutable State Model**: All UI state in a single `UIModel` struct
+- **Pure Update Functions**: State transitions are pure functions with no side effects
+- **Explicit Render Cycle**: Clear separation between state updates and display
+- **Unidirectional Data Flow**: Simple `Input → Update → Render` cycle
+
+```cpp
+// All UI state in one immutable struct
+struct UIModel {
+    std::vector<Warning> warnings;
+    int current_index = 0;
+    NolintStyle current_style = NolintStyle::NONE;
+    std::unordered_map<std::string, NolintStyle> warning_decisions;
+    bool should_save_and_exit = false;
+};
+
+// Pure state transition function
+auto update(const UIModel& current, const InputEvent& event) -> UIModel;
+
+// Simple main loop - no nested loops!
+while (!should_exit(model)) {
+    render(model);                    // Explicit render
+    auto event = get_input();         // Get input event
+    model = update(model, event);     // Pure state update
+}
+```
+
+### **Core Architecture**
 - **Functional Core**: Pure text transformations in `functional_core.hpp` - no side effects, extensively tested
 - **I/O Shell**: `NolintApp`, `Terminal`, `FileSystem` handle all side effects and coordinate with core
-- **Modern C++20**: Concepts, ranges, RAII patterns, and designated initializers throughout
+- **Modern C++20**: Concepts, ranges, RAII patterns, and designated initializers throughout  
 - **Dependency Injection**: All I/O operations abstracted with interfaces for clean testing
+
+**Benefits**: Eliminates hidden state mutations, complex nested loops, and state synchronization bugs. Makes UI behavior predictable and easy to test.
 
 See `ARCHITECTURE.md` for detailed design documentation.
 
