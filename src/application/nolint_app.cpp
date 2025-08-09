@@ -1,4 +1,5 @@
 #include "nolint/application/nolint_app.hpp"
+#include "nolint/ui/ftxui_terminal.hpp"
 #include "nolint/core/functional_core.hpp"
 #include <algorithm>
 #include <fstream>
@@ -47,10 +48,21 @@ auto NolintApp::run(const Config& config) -> int {
             return 1;
         }
 
-        // Run interactive session (FIXED: passes complete model)
-        // Store warnings separately since model gets moved
+        // Try reactive mode first (FTXUI), fall back to legacy polling mode
         auto warnings_copy = model.warnings;
-        auto final_decisions = run_interactive(std::move(model));
+        Decisions final_decisions;
+        
+        // Check if terminal supports reactive mode (FTXUI)
+        if (auto ftxui_terminal = dynamic_cast<FTXUITerminal*>(terminal_.get())) {
+            // Use FTXUI reactive mode with your working pattern
+            auto final_model = ftxui_terminal->run_reactive_session(model, 
+                [this](UIModel m, InputEvent e) { return update(std::move(m), e); }
+            );
+            final_decisions = final_model.decisions;
+        } else {
+            // Fall back to legacy polling mode (Terminal)
+            final_decisions = run_interactive(std::move(model));
+        }
 
         // Restore terminal
         terminal_->restore_terminal_state();

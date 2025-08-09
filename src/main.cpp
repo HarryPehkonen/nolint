@@ -2,6 +2,7 @@
 #include "nolint/io/file_system.hpp"
 #include "nolint/parsers/warning_parser.hpp"
 #include "nolint/ui/terminal.hpp"
+#include "nolint/ui/ftxui_terminal.hpp"
 #include <iostream>
 #include <memory>
 
@@ -87,7 +88,8 @@ auto main(int argc, char* argv[]) -> int {
         auto config = parse_arguments(argc, argv);
 
         // Create dependencies with dependency injection
-        auto terminal = std::make_unique<nolint::Terminal>();
+        // Back to FTXUI but with fixed implementation
+        auto terminal = std::make_unique<nolint::FTXUITerminal>();
         auto filesystem = std::make_unique<nolint::FileSystem>();
         auto parser = std::make_unique<nolint::WarningParser>();
 

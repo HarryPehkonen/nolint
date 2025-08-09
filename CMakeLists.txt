@@ -15,6 +15,22 @@ endif()
 find_package(GTest REQUIRED)
 include(GoogleTest)
 
+# Smart FTXUI detection: try system package first, fallback to FetchContent
+find_package(ftxui QUIET)
+if(NOT ftxui_FOUND)
+    message(STATUS "System FTXUI not found, using FetchContent")
+    include(FetchContent)
+    FetchContent_Declare(ftxui
+        GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
+        GIT_TAG v6.1.9
+        GIT_PROGRESS TRUE
+    )
+    FetchContent_MakeAvailable(ftxui)
+    message(STATUS "FTXUI integrated via FetchContent")
+else()
+    message(STATUS "Using system-installed FTXUI")
+endif()
+
 # Include directories
 include_directories(include)
 
@@ -25,6 +41,7 @@ set(NOLINT_SOURCES
     src/core/functional_core.cpp
     src/parsers/warning_parser.cpp
     src/ui/terminal.cpp
+    src/ui/ftxui_terminal.cpp
     src/ui/ui_model.cpp
     src/ui/ui_model_persistence.cpp
     src/io/file_system.cpp
@@ -38,6 +55,7 @@ set(NOLINT_HEADERS
     include/nolint/core/functional_core.hpp
     include/nolint/parsers/warning_parser.hpp
     include/nolint/ui/terminal.hpp
+    include/nolint/ui/ftxui_terminal.hpp
     include/nolint/ui/ui_model.hpp
     include/nolint/io/file_system.hpp
     include/nolint/application/nolint_app.hpp
@@ -47,6 +65,11 @@ set(NOLINT_HEADERS
 # Main executable
 add_executable(nolint src/main.cpp ${NOLINT_SOURCES})
 target_include_directories(nolint PRIVATE include)
+target_link_libraries(nolint PRIVATE 
+    ftxui::component
+    ftxui::dom
+    ftxui::screen
+)
 
 # Test executable
 set(TEST_SOURCES
@@ -63,7 +86,14 @@ set(TEST_SOURCES
 
 add_executable(nolint_tests ${TEST_SOURCES} ${NOLINT_SOURCES})
 target_include_directories(nolint_tests PRIVATE include)
-target_link_libraries(nolint_tests PRIVATE GTest::gtest GTest::gmock GTest::gtest_main)
+target_link_libraries(nolint_tests PRIVATE 
+    GTest::gtest 
+    GTest::gmock 
+    GTest::gtest_main
+    ftxui::component
+    ftxui::dom
+    ftxui::screen
+)
 gtest_discover_tests(nolint_tests)
 
 # Quality assurance targets
