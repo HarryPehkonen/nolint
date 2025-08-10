@@ -36,65 +36,25 @@ include_directories(include)
 
 # Source files
 set(NOLINT_SOURCES
-    src/core/warning.cpp
-    src/core/annotated_file.cpp
-    src/core/functional_core.cpp
-    src/parsers/warning_parser.cpp
-    src/ui/terminal.cpp
-    src/ui/ftxui_terminal.cpp
-    src/ui/ui_model.cpp
-    src/ui/ui_model_persistence.cpp
-    src/io/file_system.cpp
-    src/application/nolint_app.cpp
+    src/main.cpp
+    src/ui_model.cpp
+    src/file_context.cpp
+    src/warning_parser.cpp
+    src/annotated_file.cpp
+    src/file_modifier.cpp
 )
 
-# Header files for IDE support
-set(NOLINT_HEADERS
-    include/nolint/core/warning.hpp
-    include/nolint/core/annotated_file.hpp
-    include/nolint/core/functional_core.hpp
-    include/nolint/parsers/warning_parser.hpp
-    include/nolint/ui/terminal.hpp
-    include/nolint/ui/ftxui_terminal.hpp
-    include/nolint/ui/ui_model.hpp
-    include/nolint/io/file_system.hpp
-    include/nolint/application/nolint_app.hpp
-    include/nolint/interfaces.hpp
-)
-
-# Main executable
-add_executable(nolint src/main.cpp ${NOLINT_SOURCES})
-target_include_directories(nolint PRIVATE include)
+# Main executable with automatic piped input detection
+add_executable(nolint ${NOLINT_SOURCES})
 target_link_libraries(nolint PRIVATE 
     ftxui::component
     ftxui::dom
     ftxui::screen
 )
 
-# Test executable
-set(TEST_SOURCES
-    tests/test_main.cpp
-    tests/core/test_warning.cpp
-    tests/core/test_annotated_file.cpp
-    tests/core/test_functional_core.cpp
-    tests/parsers/test_warning_parser.cpp
-    tests/ui/test_ui_model.cpp
-    tests/ui/test_ui_model_persistence.cpp
-    # tests/application/test_batch_mode.cpp  # Temporarily disabled due to Google Mock warnings
-    # tests/integration/test_integration.cpp  # Temporarily disabled due to Google Mock warnings
-)
-
-add_executable(nolint_tests ${TEST_SOURCES} ${NOLINT_SOURCES})
-target_include_directories(nolint_tests PRIVATE include)
-target_link_libraries(nolint_tests PRIVATE 
-    GTest::gtest 
-    GTest::gmock 
-    GTest::gtest_main
-    ftxui::component
-    ftxui::dom
-    ftxui::screen
-)
-gtest_discover_tests(nolint_tests)
+# Tests
+enable_testing()
+add_subdirectory(tests)
 
 # Quality assurance targets
 add_custom_target(format

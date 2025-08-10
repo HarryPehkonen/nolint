@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document captures the design decisions, implementation approaches, and lessons learned during the development of the previous `nolint` implementation. While this implementation was fully functional and production-ready, the project is now being completely rewritten with a superior architecture.
+This document captures the design decisions, implementation approaches, and lessons learned during the development of the previous `nolint` implementation. While this implementation was fully functional and production-ready, the project is now being completely rewritten with a functional architecture.
 
 **Historical Status**: All major issues were resolved. The previous tool was production-ready with comprehensive functionality and robust error handling.
 

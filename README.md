@@ -13,7 +13,7 @@ Find specific warnings instantly with `/` key. Filter by warning type (`readabil
 ###   **Interactive Preview**
 See exactly how your code will look with NOLINT comments applied before making changes. Real-time preview updates as you cycle through suppression styles.
 
-###   **Lightning-Fast Navigation**
+###   **Single-Key Navigation**
 - **Single-key controls**: No Enter key required - immediate response
 - **Arrow key navigation**: `←→` to move between warnings, `↑↓` to change styles
 - **Auto-save**: All style changes immediately preserved
@@ -30,25 +30,29 @@ See exactly how your code will look with NOLINT comments applied before making c
 - **Color-coded Display**: Green highlighting for NOLINT comments in preview
 - **Atomic File Operations**: Safe modification with proper error handling
 - **Memory-Safe**: Comprehensive bounds checking prevents crashes
-- **Terminal-Safe**: Perfect state restoration using RAII patterns
+- **Terminal-Safe**: State restoration using RAII patterns
 
 ## Quick Start
 
 ```bash
 # Build
-mkdir build && cd build
-cmake -DCMAKE_CXX_STANDARD=20 ..
-make -j$(nproc)
+cmake -B build
+cmake --build build
+
+# GCC shows unrealistic warnings regarding __builtin_memcpy.
+# For Release builds, use Clang to avoid false-positive warnings:
+CXX=clang++ cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 
 # Interactive mode with clang-tidy output
 clang-tidy src/*.cpp -- -std=c++20 > warnings.txt
-./nolint --input warnings.txt
+nolint --input warnings.txt
 
 # Piped input (maintains interactivity via /dev/tty)
-clang-tidy src/*.cpp -- -std=c++20 | ./nolint
+clang-tidy src/*.cpp -- -std=c++20 | nolint
 
 # Non-interactive mode
-./nolint --input warnings.txt --non-interactive --default-style nolintnextline
+nolint --input warnings.txt --non-interactive --default-style nolintnextline
 ```
 
 ## Interactive Controls
@@ -104,7 +108,7 @@ while (!should_exit(model)) {
 - **Modern C++20**: Concepts, ranges, RAII patterns, and designated initializers throughout  
 - **Dependency Injection**: All I/O operations abstracted with interfaces for clean testing
 
-**Benefits**: Eliminates hidden state mutations, complex nested loops, and state synchronization bugs. Makes UI behavior predictable and easy to test.
+**Benefits**: Eliminates hidden state mutations, complex nested loops, and state synchronization bugs. Makes UI behavior predictable and testable.
 
 See `ARCHITECTURE.md` for detailed design documentation.
 
@@ -126,13 +130,13 @@ Test categories:
 - **11 UI Integration Tests**: Interactive mode with regression coverage
 - **1 Real Output Test**: 242 actual clang-tidy warnings
 
-## Production Ready
+## Production Status
 
-  **All major issues resolved**:
+All major issues resolved:
 - Memory-safe with comprehensive bounds checking
-- Perfect terminal state restoration
-- Robust search functionality with crash regression tests
+- Terminal state restoration
+- Search functionality with crash regression tests
 - Auto-save for all user interactions
-- Clean, intuitive exit interface
+- Exit interface
 
-The tool is ready for daily use managing clang-tidy suppressions.
+The tool is functional for managing clang-tidy suppressions.
