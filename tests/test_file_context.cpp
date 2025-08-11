@@ -28,7 +28,7 @@ protected:
 };
 
 TEST_F(FileContextTest, ReadContextAroundWarning) {
-    Warning warning{"test_context.cpp", 4, 1, "type", "message"};
+    Warning warning{"test_context.cpp", 4, 1, "type", "message", std::nullopt};
     
     auto context = read_file_context(warning, 2);  // 2 lines of context
     
@@ -45,7 +45,7 @@ TEST_F(FileContextTest, ReadContextAroundWarning) {
 }
 
 TEST_F(FileContextTest, HandleFileNotFound) {
-    Warning warning{"nonexistent.cpp", 1, 1, "type", "message"};
+    Warning warning{"nonexistent.cpp", 1, 1, "type", "message", std::nullopt};
     
     auto context = read_file_context(warning, 3);
     
@@ -54,7 +54,7 @@ TEST_F(FileContextTest, HandleFileNotFound) {
 }
 
 TEST_F(FileContextTest, HandleLineOutOfRange) {
-    Warning warning{"test_context.cpp", 100, 1, "type", "message"};
+    Warning warning{"test_context.cpp", 100, 1, "type", "message", std::nullopt};
     
     auto context = read_file_context(warning, 3);
     
@@ -63,7 +63,7 @@ TEST_F(FileContextTest, HandleLineOutOfRange) {
 }
 
 TEST_F(FileContextTest, BuildSuppressionPreview) {
-    Warning warning{"file.cpp", 10, 5, "readability-magic-numbers", "message"};
+    Warning warning{"file.cpp", 10, 5, "readability-magic-numbers", "message", std::nullopt};
     
     auto nolint = build_suppression_preview(warning, NolintStyle::NOLINT);
     EXPECT_TRUE(nolint.has_value());

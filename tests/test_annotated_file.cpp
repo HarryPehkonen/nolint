@@ -51,7 +51,7 @@ TEST_F(AnnotatedFileTest, LoadFromFile) {
 
 TEST_F(AnnotatedFileTest, ApplyInlineNolint) {
     auto file = load_annotated_file(test_file_);
-    Warning warning{test_file_, 2, 9, "clang-diagnostic-unused-variable", "unused variable"};
+    Warning warning{test_file_, 2, 9, "clang-diagnostic-unused-variable", "unused variable", std::nullopt};
     
     auto modified = apply_decision(file, warning, NolintStyle::NOLINT);
     
@@ -65,7 +65,7 @@ TEST_F(AnnotatedFileTest, ApplyInlineNolint) {
 
 TEST_F(AnnotatedFileTest, ApplyNolintnextline) {
     auto file = load_annotated_file(test_file_);
-    Warning warning{test_file_, 2, 9, "clang-diagnostic-unused-variable", "unused variable"};
+    Warning warning{test_file_, 2, 9, "clang-diagnostic-unused-variable", "unused variable", std::nullopt};
     
     auto modified = apply_decision(file, warning, NolintStyle::NOLINTNEXTLINE);
     
@@ -76,7 +76,7 @@ TEST_F(AnnotatedFileTest, ApplyNolintnextline) {
 
 TEST_F(AnnotatedFileTest, ApplyNolintBlock) {
     auto file = load_annotated_file(test_file_);
-    Warning warning{test_file_, 2, 9, "clang-diagnostic-unused-variable", "unused variable"};
+    Warning warning{test_file_, 2, 9, "clang-diagnostic-unused-variable", "unused variable", std::nullopt};
     
     auto modified = apply_decision(file, warning, NolintStyle::NOLINT_BLOCK);
     
@@ -156,7 +156,7 @@ TEST_F(AnnotatedFileTest, ExtractIndentation) {
 
 TEST_F(AnnotatedFileTest, HandleInvalidLineNumbers) {
     auto file = load_annotated_file(test_file_);
-    Warning warning{test_file_, 100, 1, "type", "message"};  // Line 100 doesn't exist
+    Warning warning{test_file_, 100, 1, "type", "message", std::nullopt};  // Line 100 doesn't exist
     
     auto modified = apply_decision(file, warning, NolintStyle::NOLINT);
     
@@ -167,7 +167,7 @@ TEST_F(AnnotatedFileTest, HandleInvalidLineNumbers) {
 
 TEST_F(AnnotatedFileTest, ImmutableOperations) {
     auto original = load_annotated_file(test_file_);
-    Warning warning{test_file_, 2, 9, "type", "message"};
+    Warning warning{test_file_, 2, 9, "type", "message", std::nullopt};
     
     auto modified = apply_decision(original, warning, NolintStyle::NOLINT);
     

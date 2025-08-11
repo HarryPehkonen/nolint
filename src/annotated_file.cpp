@@ -56,13 +56,41 @@ auto apply_decision(AnnotatedFile file, const Warning& warning, NolintStyle styl
             break;
 
         case NolintStyle::NOLINT_BLOCK:
-            // Block suppression - for now, just wrap the single line
-            // TODO: Implement proper function boundary detection
-            file.blocks.push_back(BlockSuppression{
-                .start_line = line_index,
-                .end_line = line_index,
-                .warning_type = warning.type
-            });
+            // Block suppression with proper function boundary detection
+            if (warning.function_lines.has_value()) {
+                // Find the actual function's closing brace position
+                int function_end_line_1based = warning.line_number + *warning.function_lines - 1;
+                size_t closing_brace_index = static_cast<size_t>(function_end_line_1based - 1);
+                
+                // Look for the function's closing brace at the same indentation level as the function
+                for (size_t i = static_cast<size_t>(function_end_line_1based - 1); 
+                     i < std::min(static_cast<size_t>(function_end_line_1based + 4), file.lines.size()); 
+                     ++i) {
+                    if (file.lines[i].text.find('}') != std::string::npos) {
+                        // Check if this closing brace is at the function level (same indentation as function)
+                        std::string line_indent = extract_indentation(file.lines[i].text);
+                        if (line_indent == indent && 
+                            file.lines[i].text.find_first_not_of(" \t}") == std::string::npos) {
+                            // Found the function's closing brace at the right indentation level
+                            closing_brace_index = i;
+                            break;
+                        }
+                    }
+                }
+                
+                file.blocks.push_back(BlockSuppression{
+                    .start_line = line_index,
+                    .end_line = closing_brace_index,
+                    .warning_type = warning.type
+                });
+            } else {
+                // Fallback: just wrap the single line if no function_lines info
+                file.blocks.push_back(BlockSuppression{
+                    .start_line = line_index,
+                    .end_line = line_index,
+                    .warning_type = warning.type
+                });
+            }
             break;
     }
 

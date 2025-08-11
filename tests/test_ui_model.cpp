@@ -8,10 +8,12 @@ protected:
     UIModel create_test_model() {
         UIModel model;
         model.warnings = {
-            {"file1.cpp", 10, 5, "type1", "message1"},
-            {"file2.cpp", 20, 10, "type2", "message2"},
-            {"file3.cpp", 30, 15, "type3", "message3"}
+            {"file1.cpp", 10, 5, "type1", "message1", std::nullopt},
+            {"file2.cpp", 20, 10, "type2", "message2", std::nullopt},
+            {"file3.cpp", 30, 15, "type3", "message3", std::nullopt}
         };
+        // Initialize filtered indices to show all warnings (no filter)
+        model.filtered_warning_indices = filter_warnings(model.warnings, "");
         return model;
     }
 };
@@ -59,6 +61,9 @@ TEST_F(UIModelTest, CycleStyleUp) {
     auto model = create_test_model();
     model.current_index = 0;
     
+    // Add function_lines to first warning to enable NOLINT_BLOCK
+    model.warnings[0].function_lines = 50;
+    
     // Start at NONE
     EXPECT_EQ(model.current_style(), NolintStyle::NONE);
     
@@ -70,7 +75,7 @@ TEST_F(UIModelTest, CycleStyleUp) {
     auto model2 = update(model1, InputEvent::ARROW_UP);
     EXPECT_EQ(model2.current_style(), NolintStyle::NOLINTNEXTLINE);
     
-    // Cycle to NOLINT_BLOCK
+    // Cycle to NOLINT_BLOCK (available because function_lines is set)
     auto model3 = update(model2, InputEvent::ARROW_UP);
     EXPECT_EQ(model3.current_style(), NolintStyle::NOLINT_BLOCK);
     
@@ -83,9 +88,34 @@ TEST_F(UIModelTest, CycleStyleDown) {
     auto model = create_test_model();
     model.current_index = 0;
     
+    // Add function_lines to first warning to enable NOLINT_BLOCK
+    model.warnings[0].function_lines = 50;
+    
     // Start at NONE, cycle backwards to NOLINT_BLOCK
     auto model1 = update(model, InputEvent::ARROW_DOWN);
     EXPECT_EQ(model1.current_style(), NolintStyle::NOLINT_BLOCK);
+}
+
+TEST_F(UIModelTest, CycleStyleSkipsNolintBlockWhenNoFunctionLines) {
+    auto model = create_test_model();
+    model.current_index = 0;
+    
+    // No function_lines set - should skip NOLINT_BLOCK
+    
+    // Start at NONE
+    EXPECT_EQ(model.current_style(), NolintStyle::NONE);
+    
+    // Cycle to NOLINT
+    auto model1 = update(model, InputEvent::ARROW_UP);
+    EXPECT_EQ(model1.current_style(), NolintStyle::NOLINT);
+    
+    // Cycle to NOLINTNEXTLINE
+    auto model2 = update(model1, InputEvent::ARROW_UP);
+    EXPECT_EQ(model2.current_style(), NolintStyle::NOLINTNEXTLINE);
+    
+    // Cycle should skip NOLINT_BLOCK and go back to NONE
+    auto model3 = update(model2, InputEvent::ARROW_UP);
+    EXPECT_EQ(model3.current_style(), NolintStyle::NONE);
 }
 
 TEST_F(UIModelTest, DecisionsPersistAcrossNavigation) {
@@ -129,6 +159,7 @@ TEST_F(UIModelTest, ToggleStatistics) {
 
 TEST_F(UIModelTest, EmptyWarningsHandling) {
     UIModel model;  // No warnings
+    model.filtered_warning_indices = filter_warnings(model.warnings, "");  // Empty vector
     
     // Should handle all events gracefully
     auto model1 = update(model, InputEvent::ARROW_RIGHT);

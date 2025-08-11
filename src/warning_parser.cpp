@@ -16,6 +16,28 @@ auto WarningParser::parse(std::istream& input) -> std::vector<Warning> {
     while (std::getline(input, line)) {
         if (auto warning = parse_line(line)) {
             warnings.push_back(*warning);
+            
+            // Check if a following line (within the next few lines) is a note about function size
+            if (!warnings.empty() && warnings.back().type == "readability-function-size") {
+                std::streampos pos = input.tellg();
+                std::string next_line;
+                bool found_note = false;
+                
+                // Look ahead up to 5 lines for the note (to skip source context lines)
+                for (int i = 0; i < 5 && std::getline(input, next_line); ++i) {
+                    std::smatch note_match;
+                    if (std::regex_match(next_line, note_match, note_pattern_)) {
+                        warnings.back().function_lines = std::stoi(note_match[1].str());
+                        found_note = true;
+                        break;
+                    }
+                }
+                
+                if (!found_note) {
+                    // Didn't find a note, restore stream position
+                    input.seekg(pos);
+                }
+            }
         }
     }
     

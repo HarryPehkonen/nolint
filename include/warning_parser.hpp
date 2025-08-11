@@ -23,6 +23,12 @@ private:
         R"(^([^:]+):(\d+):(\d+):\s+warning:\s+(.+?)\s+\[([^\]]+)\]$)"
     };
     
+    // Regex pattern for note lines about function size
+    // Format: file.cpp:line:col: note: 35 lines including whitespace and comments...
+    const std::regex note_pattern_{
+        R"(^[^:]+:\d+:\d+:\s+note:\s+(\d+)\s+lines\s+including.*$)"
+    };
+    
     // Parse a single line that might be a warning
     auto parse_line(const std::string& line) -> std::optional<Warning>;
 };

@@ -7,10 +7,12 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/component/component_base.hpp>
 
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -87,6 +89,128 @@ auto describe_input_type(InputType type) -> std::string {
     return "unknown";
 }
 
+// UI mode selector
+enum UIMode {
+    MAIN_UI = 0,
+    SEARCH_UI = 1
+};
+
+// Helper function to create balanced NOLINT_BLOCK preview
+struct BalancedContext {
+    std::vector<std::string> lines;
+    std::string error_message;
+};
+
+auto create_balanced_nolint_block_preview(const nolint::Warning& warning, int function_lines, int context_lines = 2) -> BalancedContext {
+    BalancedContext result;
+    
+    std::ifstream file(warning.file_path);
+    if (!file.is_open()) {
+        result.error_message = "Could not open file: " + warning.file_path;
+        return result;
+    }
+    
+    std::vector<std::string> all_lines;
+    std::string line;
+    while (std::getline(file, line)) {
+        all_lines.push_back(line);
+    }
+    
+    if (warning.line_number < 1 || warning.line_number > static_cast<int>(all_lines.size())) {
+        result.error_message = "Line number out of range";
+        return result;
+    }
+    
+    // Extract indentation from the warning line
+    std::string indent;
+    int warning_idx = warning.line_number - 1;
+    if (warning_idx >= 0 && warning_idx < static_cast<int>(all_lines.size())) {
+        for (char c : all_lines[warning_idx]) {
+            if (c == ' ' || c == '\t') {
+                indent += c;
+            } else {
+                break;
+            }
+        }
+    }
+    
+    // Show 6 lines before NOLINTBEGIN  
+    int pre_begin_lines = std::min(context_lines * 3, 6); // Scale with context, max 6
+    int start_line = std::max(0, warning.line_number - pre_begin_lines - 1);
+    for (int i = start_line; i < warning.line_number - 1; ++i) {
+        if (i >= 0 && i < static_cast<int>(all_lines.size())) {
+            result.lines.push_back(std::to_string(i + 1) + ": " + all_lines[i]);
+        }
+    }
+    
+    // Add NOLINTBEGIN
+    result.lines.push_back(std::string(std::to_string(warning.line_number).length() + 2, ' ') + indent + "// NOLINTBEGIN(" + warning.type + ")");
+    
+    // Show 6 lines of function start
+    int post_begin_lines = std::min(context_lines * 3, 6); // Scale with context, max 6
+    for (int i = warning.line_number - 1; i < std::min(warning.line_number - 1 + post_begin_lines, static_cast<int>(all_lines.size())); ++i) {
+        if (i >= 0 && i < static_cast<int>(all_lines.size())) {
+            result.lines.push_back(std::to_string(i + 1) + ": " + all_lines[i]);
+        }
+    }
+    
+    // Add continuation
+    int displayed_function_lines = post_begin_lines;
+    int pre_end_lines = std::min(context_lines * 3, 6); // Scale with context, max 6
+    int remaining_lines = function_lines - displayed_function_lines - pre_end_lines;
+    if (remaining_lines > 0) {
+        result.lines.push_back(std::string(12, ' ') + "... (" + std::to_string(remaining_lines) + " more lines)");
+    }
+    
+    // Find the actual function's closing brace position after function_end
+    int function_end = warning.line_number + function_lines - 1;
+    int closing_brace_line = function_end;
+    
+    // Look for the function's closing brace (should be at the function indentation level)
+    // Use the already extracted function indent from earlier in the function
+    
+    for (int i = function_end; i < std::min(function_end + 5, static_cast<int>(all_lines.size())); ++i) {
+        if (i >= 0 && all_lines[i].find('}') != std::string::npos) {
+            // Check if this closing brace is at the function level (same indentation as function)
+            std::string line_indent;
+            for (char c : all_lines[i]) {
+                if (c == ' ' || c == '\t') {
+                    line_indent += c;
+                } else {
+                    break;
+                }
+            }
+            if (line_indent == indent && all_lines[i].find_first_not_of(" \t}") == std::string::npos) {
+                // Found the function's closing brace at the right indentation level
+                closing_brace_line = i;
+                break;
+            }
+        }
+    }
+    
+    // Show 6 lines before and including the closing brace
+    int pre_nolintend_start = std::max(closing_brace_line - pre_end_lines + 1, warning.line_number + displayed_function_lines);
+    for (int i = pre_nolintend_start; i <= closing_brace_line; ++i) {
+        if (i >= 0 && i > warning.line_number + post_begin_lines - 1 && i < static_cast<int>(all_lines.size())) {
+            result.lines.push_back(std::to_string(i + 1) + ": " + all_lines[i]);
+        }
+    }
+    
+    // Add NOLINTEND after the closing brace (on the next line after line 453)
+    int nolintend_line = closing_brace_line + 1;
+    result.lines.push_back(std::string(std::to_string(nolintend_line).length() + 2, ' ') + indent + "// NOLINTEND(" + warning.type + ")");
+    
+    // Show 6 lines after NOLINTEND for context
+    int post_end_lines = std::min(context_lines * 3, 6); // Scale with context, max 6
+    for (int i = nolintend_line; i < std::min(nolintend_line + post_end_lines, static_cast<int>(all_lines.size())); ++i) {
+        if (i >= 0 && i < static_cast<int>(all_lines.size())) {
+            result.lines.push_back(std::to_string(i + 1) + ": " + all_lines[i]);
+        }
+    }
+    
+    return result;
+}
+
 // Smart input handling with automatic /dev/tty redirect
 struct InputResult {
     std::vector<nolint::Warning> warnings;
@@ -145,8 +269,8 @@ auto handle_smart_input(const Config& config) -> InputResult {
     return result;
 }
 
-// Render the UI (same as before, but cleaner)
-auto render_ui(const nolint::UIModel& model) -> ftxui::Element {
+// Render the UI with dynamic context sizing
+auto render_ui(const nolint::UIModel& model, int context_lines = 3) -> ftxui::Element {
     using namespace ftxui;
     using nolint::NolintStyle;
     
@@ -160,25 +284,47 @@ auto render_ui(const nolint::UIModel& model) -> ftxui::Element {
     
     // Show statistics screen if toggled
     if (model.show_statistics) {
-        std::unordered_map<std::string, int> type_counts;
-        for (const auto& w : model.warnings) {
-            type_counts[w.type]++;
-        }
+        auto stats = calculate_warning_statistics(model.warnings, model.decisions);
         
         Elements stats_elements;
-        stats_elements.push_back(text("  Warning Statistics") | bold | center);
+        stats_elements.push_back(text("  Warning Type Statistics") | bold | center);
         stats_elements.push_back(separator());
         
-        for (const auto& [type, count] : type_counts) {
-            stats_elements.push_back(hbox({
-                text("• " + type) | color(Color::Yellow),
-                text(": "),
-                text(std::to_string(count)) | color(Color::Green)
-            }));
+        // Table header
+        stats_elements.push_back(hbox({
+            text("  Warning Type") | bold | size(WIDTH, EQUAL, 42),
+            text(" Total") | bold | size(WIDTH, EQUAL, 10),
+            text(" NOLINT") | bold | size(WIDTH, EQUAL, 10),
+            text(" NEXTLINE") | bold | size(WIDTH, EQUAL, 12),
+            text(" BLOCK") | bold | size(WIDTH, EQUAL, 10),
+            text(" None") | bold | size(WIDTH, EQUAL, 10)
+        }) | color(Color::Cyan));
+        
+        stats_elements.push_back(text("  " + std::string(94, '-')) | color(Color::White));
+        
+        // Table rows
+        for (size_t i = 0; i < stats.size(); ++i) {
+            const auto& stat = stats[i];
+            bool is_selected = (i == model.statistics_selected_index);
+            
+            auto row = hbox({
+                text("  " + stat.type) | size(WIDTH, EQUAL, 42),
+                text(" " + std::to_string(stat.total_count)) | size(WIDTH, EQUAL, 10) | color(Color::White),
+                text(" " + std::to_string(stat.nolint_count)) | size(WIDTH, EQUAL, 10) | color(Color::Green),
+                text(" " + std::to_string(stat.nolintnextline_count)) | size(WIDTH, EQUAL, 12) | color(Color::Yellow),
+                text(" " + std::to_string(stat.nolint_block_count)) | size(WIDTH, EQUAL, 10) | color(Color::Magenta),
+                text(" " + std::to_string(stat.unsuppressed_count)) | size(WIDTH, EQUAL, 10) | color(Color::Red)
+            });
+            
+            if (is_selected) {
+                row = row | bgcolor(Color::Blue) | bold;
+            }
+            
+            stats_elements.push_back(row);
         }
         
         stats_elements.push_back(separator());
-        stats_elements.push_back(text("Press 't' to return to warnings") | dim);
+        stats_elements.push_back(text("↑↓: select | Enter: filter | t/Esc: back") | dim);
         
         return vbox(stats_elements) | border;
     }
@@ -201,7 +347,7 @@ auto render_ui(const nolint::UIModel& model) -> ftxui::Element {
         text(warning.file_path + ":" + std::to_string(warning.line_number)) | color(Color::Cyan)
     }));
     elements.push_back(hbox({
-        text("⚠  Type: "), 
+        text("  Type: "), 
         text(warning.type) | color(Color::Yellow)
     }));
     elements.push_back(hbox({
@@ -213,36 +359,97 @@ auto render_ui(const nolint::UIModel& model) -> ftxui::Element {
     // File context
     elements.push_back(text("  Code Context:") | bold);
     
-    auto context = nolint::read_file_context(warning, 3);
-    if (!context.error_message.empty()) {
-        elements.push_back(text(" " + context.error_message) | color(Color::Red));
+    // For NOLINT_BLOCK, use a custom balanced context instead of normal context
+    if (model.current_style() == NolintStyle::NOLINT_BLOCK && warning.function_lines.has_value()) {
+        // Create a balanced NOLINT_BLOCK preview with responsive context sizing
+        auto balanced_context = create_balanced_nolint_block_preview(warning, *warning.function_lines, context_lines);
+        if (!balanced_context.error_message.empty()) {
+            elements.push_back(text(" " + balanced_context.error_message) | color(Color::Red));
+        } else {
+            for (const auto& line : balanced_context.lines) {
+                elements.push_back(text("  " + line) | (line.find("NOLINT") != std::string::npos ? color(Color::Green) : dim));
+            }
+        }
     } else {
-        for (const auto& line : context.lines) {
+        auto context = nolint::read_file_context(warning, context_lines);
+        if (!context.error_message.empty()) {
+            elements.push_back(text(" " + context.error_message) | color(Color::Red));
+        } else {
+            // For NOLINTNEXTLINE, we need to track if we should insert the comment before the warning line
+            bool insert_nolintnextline = false;
+            std::string nolintnextline_comment;
+            
+            if (model.current_style() == NolintStyle::NOLINTNEXTLINE) {
+                auto preview = nolint::build_suppression_preview(warning, NolintStyle::NOLINTNEXTLINE);
+                if (preview) {
+                    insert_nolintnextline = true;
+                    nolintnextline_comment = *preview;
+                }
+            }
+        
+        // If NOLINTNEXTLINE is active, we'll skip the last line to avoid cutting off the warning count
+        size_t lines_to_show = context.lines.size();
+        if (model.current_style() == NolintStyle::NOLINTNEXTLINE && lines_to_show > 0) {
+            lines_to_show--;  // Skip the last line to compensate for the extra NOLINTNEXTLINE comment
+        }
+        
+        for (size_t i = 0; i < lines_to_show; ++i) {
+            const auto& line = context.lines[i];
             std::string line_str = std::to_string(line.line_number) + ": " + line.text;
             
-            if (line.is_warning_line) {
-                elements.push_back(text(" " + line_str) | color(Color::Red) | bold);
+            // Check if we need to insert NOLINTNEXTLINE before this line
+            if (insert_nolintnextline && line.is_warning_line) {
+                // Extract the indentation from the warning line
+                std::string indent;
+                for (char c : line.text) {
+                    if (c == ' ' || c == '\t') {
+                        indent += c;
+                    } else {
+                        break;
+                    }
+                }
                 
-                // Show preview if style selected
-                auto preview = nolint::build_suppression_preview(warning, model.current_style());
-                if (preview && model.current_style() == NolintStyle::NOLINTNEXTLINE) {
-                    elements.push_back(text("  ★ " + *preview) | color(Color::Green) | dim);
-                } else if (preview && model.current_style() == NolintStyle::NOLINT) {
-                    elements.push_back(text("  ★ " + line.text + *preview) | color(Color::Green) | dim);
+                // Insert the NOLINTNEXTLINE comment with matching indentation
+                // Need to account for the line number prefix (e.g., "547: ")
+                std::string line_prefix = std::to_string(line.line_number) + ": ";
+                std::string spaces_for_line_prefix(line_prefix.length(), ' ');
+                elements.push_back(text("  " + spaces_for_line_prefix + indent + nolintnextline_comment) | color(Color::Green));
+                insert_nolintnextline = false;  // Only insert once
+            }
+            
+            if (line.is_warning_line) {
+                if (model.current_style() == NolintStyle::NOLINT) {
+                    // Show the modified line with NOLINT comment in green
+                    auto preview = nolint::build_suppression_preview(warning, NolintStyle::NOLINT);
+                    if (preview) {
+                        std::string modified_line = std::to_string(line.line_number) + ": " + line.text + "  " + *preview;
+                        elements.push_back(text("  " + modified_line) | color(Color::Green));
+                    } else {
+                        elements.push_back(text("  " + line_str) | color(Color::Red) | bold);
+                    }
+                } else if (model.current_style() == NolintStyle::NOLINTNEXTLINE) {
+                    // Warning line is shown as normal since it's suppressed by NOLINTNEXTLINE
+                    elements.push_back(text("  " + line_str) | dim);
+                } else if (model.current_style() == NolintStyle::NONE) {
+                    // Show warning line in red when no suppression
+                    elements.push_back(text("  " + line_str) | color(Color::Red) | bold);
+                } else {
+                    // Other styles - just show line normally 
+                    elements.push_back(text("  " + line_str) | dim);
                 }
             } else {
                 elements.push_back(text("  " + line_str) | dim);
             }
+        }
         }
     }
     
     elements.push_back(text(""));
     
     // Current suppression style with emoji
-    std::string style_emoji = (model.current_style() == NolintStyle::NONE) ? "✗" : "✓";
     Color style_color = (model.current_style() == NolintStyle::NONE) ? Color::White : Color::Green;
     elements.push_back(hbox({
-        text(style_emoji + " Suppression: "), 
+        text("  Suppression: "), 
         text(style_text) | color(style_color) | bold
     }));
     
@@ -250,11 +457,18 @@ auto render_ui(const nolint::UIModel& model) -> ftxui::Element {
     elements.push_back(separator());
     
     // Status and controls
+    auto warning_count_text = "Warning " + std::to_string(model.current_index + 1) + "/" + 
+                             std::to_string(model.total_warnings());
+    
+    // Add filter status if active
+    if (!model.search_filter.empty()) {
+        warning_count_text += " (filtered: " + model.search_filter + ")";
+    }
+    
     elements.push_back(hbox({
-        text("  Warning " + std::to_string(model.current_index + 1) + "/" + 
-             std::to_string(model.total_warnings())) | bold,
+        text("  " + warning_count_text) | bold,
         text(" | "),
-        text("↑↓: style | ←→: navigate | t: stats | x: save & exit | q: quit") | dim
+        text("↑↓: style | ←→: nav | /: search | t: stats | x: save | q: quit") | dim
     }));
     
     return vbox(elements) | border;
@@ -320,15 +534,74 @@ int main(int argc, char* argv[]) {
     model.warnings = input_result.warnings;
     model.dry_run = config.dry_run;
     
+    // Initialize with all warnings visible (no filter)
+    model.filtered_warning_indices = filter_warnings(model.warnings, "");
+    
     auto screen = ScreenInteractive::Fullscreen();
     
-    // Create component
-    auto component = Renderer([&model] {
-        return render_ui(model);
+    // Create search input component
+    std::string search_input_text;
+    auto search_input = Input(&search_input_text, "Enter search filter...");
+    
+    // Create main UI component with dynamic context sizing
+    auto main_component = Renderer([&model] {
+        // Calculate dynamic context lines based on terminal height
+        int terminal_height = ftxui::Terminal::Size().dimy;
+        int fixed_ui_lines = 13; // header(2) + warning_info(4) + context_header(1) + suppression(3) + status(2) + border(2) + margins(1)
+        
+        // Reserve extra space for NOLINT_BLOCK preview (balanced preview is ~12 lines total)
+        if (model.current_style() == NolintStyle::NOLINT_BLOCK) {
+            fixed_ui_lines += 8; // Reserve extra space for the balanced preview
+        } else if (model.current_style() == NolintStyle::NOLINTNEXTLINE) {
+            fixed_ui_lines += 1; // NOLINTNEXTLINE adds one extra line
+        }
+        
+        int available_for_code = std::max(7, terminal_height - fixed_ui_lines); // minimum 7 lines
+        int context_lines = std::max(2, (available_for_code - 1) / 2); // -1 for warning line, /2 for before+after, minimum 2
+        
+        return render_ui(model, context_lines);
     });
     
+    // Create search UI component
+    auto search_component = Renderer(search_input, [&search_input_text] {
+        return vbox({
+            text("Search Filter:") | bold,
+            separator(),
+            hbox({
+                text("Filter: "),
+                text(search_input_text) | color(Color::Cyan)
+            }),
+            text("Enter to apply, Escape to cancel") | dim
+        }) | border;
+    });
+    
+    // Container component that switches between main and search UI
+    int ui_selector = MAIN_UI;
+    auto component = Container::Tab({
+        main_component,
+        search_component
+    }, &ui_selector);
+    
     // Add event handler with direct state mutation (for FTXUI)
-    component = component | CatchEvent([&model, &screen](Event event) {
+    component = component | CatchEvent([&model, &screen, &search_input_text, &ui_selector](Event event) {
+        // Handle search mode events
+        if (ui_selector == SEARCH_UI) {  // In search mode
+            if (event == Event::Return) {
+                // Apply search filter
+                model.search_filter = search_input_text;
+                model.filtered_warning_indices = filter_warnings(model.warnings, model.search_filter);
+                model.current_index = 0;  // Reset to first filtered result
+                ui_selector = MAIN_UI;  // Return to main UI
+                return true;
+            } else if (event == Event::Escape) {
+                // Cancel search
+                ui_selector = MAIN_UI;  // Return to main UI
+                search_input_text.clear();
+                return true;
+            }
+            // Let search input handle other events
+            return false;
+        }
         // Map events to our InputEvent enum
         InputEvent input_event = InputEvent::UNKNOWN;
         
@@ -346,6 +619,12 @@ int main(int argc, char* argv[]) {
             input_event = InputEvent::ARROW_LEFT;
         } else if (event == Event::ArrowRight) {
             input_event = InputEvent::ARROW_RIGHT;
+        } else if (event == Event::Character('/')) {
+            input_event = InputEvent::SEARCH;
+        } else if (event == Event::Return) {
+            input_event = InputEvent::ENTER;
+        } else if (event == Event::Escape) {
+            input_event = InputEvent::ESCAPE;
         }
         
         if (input_event == InputEvent::UNKNOWN) {
@@ -355,6 +634,12 @@ int main(int argc, char* argv[]) {
         // Use our pure update function
         auto new_model = update(model, input_event);
         model = new_model;  // Mutate for FTXUI
+        
+        // Handle search mode activation
+        if (input_event == InputEvent::SEARCH) {
+            ui_selector = SEARCH_UI;  // Switch to search UI
+            search_input_text.clear();  // Clear previous search
+        }
         
         // Exit if needed
         if (model.should_exit) {
@@ -369,7 +654,7 @@ int main(int argc, char* argv[]) {
     screen.Loop(component);
     
     // Apply decisions when exiting
-    if (!model.decisions.empty()) {
+    if (!model.decisions.empty() && model.should_save) {
         std::cout << "\n  Applying decisions to files...\n";
         
         FileModifier modifier;
@@ -389,7 +674,10 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     } else {
-        std::cout << "\n  No decisions made - no files modified.\n";
+
+        // Either no NOLINT decisions were made, or specifically not
+        // saving
+        std::cout << "\n  Exited without saving - no files modified.\n";
     }
     
     return 0;
