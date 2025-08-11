@@ -10,9 +10,9 @@ namespace nolint {
 // Represents lines of code with context around a warning
 struct FileContext {
     struct Line {
-        int line_number;
+        int line_number = 0;
         std::string text;
-        bool is_warning_line;
+        bool is_warning_line = false;
         std::optional<std::string> preview_comment;  // Shows what NOLINT would look like
     };
     

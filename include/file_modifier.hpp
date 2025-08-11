@@ -12,7 +12,7 @@ namespace nolint {
 class FileModifier {
 public:
     struct ModificationResult {
-        bool success;
+        bool success = false;
         std::string error_message;
         std::vector<std::string> modified_files;
         std::vector<std::string> failed_files;

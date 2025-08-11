@@ -62,6 +62,7 @@ nolint --input warnings.txt --non-interactive --default-style nolintnextline
 - **x**: Save all changes and exit with summary
 - **q**: Quit without saving (with confirmation)
 - **/**: Search/filter warnings by type or content
+- **t**: Show warning type statistics and filter by type
 
 ## Requirements
 

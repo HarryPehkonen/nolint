@@ -11,8 +11,8 @@ namespace nolint {
 // Warning from clang-tidy
 struct Warning {
     std::string file_path;
-    int line_number;
-    int column;
+    int line_number = 0;
+    int column = 0;
     std::string type;
     std::string message;
     std::optional<int> function_lines;  // For readability-function-size warnings
@@ -91,6 +91,7 @@ struct UIModel {
     }
     
     auto get_decision(size_t original_warning_index) const -> NolintStyle {
+        // NOLINTNEXTLINE(readability-identifier-length)
         auto it = decisions.find(original_warning_index);
         return (it != decisions.end()) ? it->second : NolintStyle::NONE;
     }
