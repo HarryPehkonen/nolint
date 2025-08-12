@@ -90,7 +90,102 @@ auto calculate_warning_statistics(const std::vector<Warning>& warnings,
     return result;
 }
 
+// Helper function to handle function view mode updates
+auto update_function_view(UIModel model, InputEvent event) -> UIModel {
+    if (!model.has_warnings() || !model.current_warning().function_lines.has_value()) {
+        // Should not be in function view without function data
+        model.in_function_view = false;
+        return model;
+    }
+
+    const auto& warning = model.current_warning();
+    int function_lines = *warning.function_lines;
+
+    // Estimate visible lines (will be properly calculated in renderer)
+    // For now, assume a reasonable terminal height
+    int visible_lines = 30; // Conservative estimate
+    int max_scroll = std::max(0, function_lines - visible_lines);
+
+    switch (event) {
+    case InputEvent::QUIT:
+    case InputEvent::ESCAPE:
+        model.in_function_view = false;
+        model.expecting_second_g = false;
+        break;
+
+    case InputEvent::ARROW_UP:
+    case InputEvent::VIM_K:
+        if (model.function_view_scroll_offset > 0) {
+            model.function_view_scroll_offset--;
+        }
+        model.expecting_second_g = false;
+        break;
+
+    case InputEvent::ARROW_DOWN:
+    case InputEvent::VIM_J:
+        if (model.function_view_scroll_offset < max_scroll) {
+            model.function_view_scroll_offset++;
+        }
+        model.expecting_second_g = false;
+        break;
+
+    case InputEvent::VIM_G:
+        // lowercase 'g' - part of gg command
+        if (model.expecting_second_g) {
+            // Second 'g' - go to top (gg command)
+            model.function_view_scroll_offset = 0;
+            model.expecting_second_g = false;
+        } else {
+            // First 'g' - wait for second
+            model.expecting_second_g = true;
+        }
+        break;
+
+    case InputEvent::VIM_CAPITAL_G:
+        // Capital 'G' - go to bottom
+        model.function_view_scroll_offset = max_scroll;
+        model.expecting_second_g = false;
+        break;
+
+    case InputEvent::PAGE_UP:
+        model.function_view_scroll_offset
+            = std::max(0, model.function_view_scroll_offset - visible_lines);
+        model.expecting_second_g = false;
+        break;
+
+    case InputEvent::PAGE_DOWN:
+        model.function_view_scroll_offset
+            = std::min(max_scroll, model.function_view_scroll_offset + visible_lines);
+        model.expecting_second_g = false;
+        break;
+
+    case InputEvent::HOME:
+        model.function_view_scroll_offset = 0;
+        model.expecting_second_g = false;
+        break;
+
+    case InputEvent::END:
+        model.function_view_scroll_offset = max_scroll;
+        model.expecting_second_g = false;
+        break;
+
+    default:
+        // Clear expecting_second_g on any other input
+        if (event != InputEvent::UNKNOWN) {
+            model.expecting_second_g = false;
+        }
+        break;
+    }
+
+    return model;
+}
+
 auto update(UIModel model, InputEvent event) -> UIModel {
+    // Handle function view mode separately
+    if (model.in_function_view) {
+        return update_function_view(model, event);
+    }
+
     // Early return if no warnings
     if (model.warnings.empty()) {
         if (event == InputEvent::QUIT) {
@@ -212,6 +307,15 @@ auto update(UIModel model, InputEvent event) -> UIModel {
         if (model.show_statistics) {
             // Exit statistics mode without selecting
             model.show_statistics = false;
+        }
+        break;
+
+    case InputEvent::FUNCTION_VIEW:
+        // Only enter function view if warning has function_lines
+        if (model.has_warnings() && model.current_warning().function_lines.has_value()) {
+            model.in_function_view = true;
+            model.function_view_scroll_offset = 0;
+            model.expecting_second_g = false;
         }
         break;
 

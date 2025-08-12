@@ -283,6 +283,222 @@ auto handle_smart_input(const Config& config) -> InputResult {
     return result;
 }
 
+// Check if a brace position is inside a comment
+auto is_brace_in_comment(const std::string& line, size_t brace_pos) -> bool {
+    size_t comment_pos = line.find("//");
+    return comment_pos != std::string::npos && comment_pos < brace_pos;
+}
+
+// Check if a brace position is inside a string literal
+auto is_brace_in_string(const std::string& line, size_t brace_pos) -> bool {
+    size_t quote_pos = line.find('"');
+    if (quote_pos != std::string::npos && quote_pos < brace_pos) {
+        size_t end_quote = line.find('"', quote_pos + 1);
+        return end_quote != std::string::npos && end_quote > brace_pos;
+    }
+    return false;
+}
+
+// Check if a brace looks like a function opening brace
+auto is_function_opening_brace(const std::string& line, size_t brace_pos) -> bool {
+    // { at end of line
+    if (brace_pos == line.length() - 1) {
+        return true;
+    }
+
+    // Check if everything after { is whitespace or comment
+    std::string after_brace = line.substr(brace_pos + 1);
+    return after_brace.find_first_not_of(" \t") == std::string::npos
+           || after_brace.find("//") == after_brace.find_first_not_of(" \t");
+}
+
+// Find the opening brace of a function
+auto find_function_opening_brace(const std::vector<std::string>& all_lines, int warning_line_index)
+    -> int {
+    for (int i = warning_line_index;
+         i < warning_line_index + 10 && i < static_cast<int>(all_lines.size()); ++i) {
+        const std::string& line = all_lines[i];
+        size_t brace_pos = line.find('{');
+
+        if (brace_pos != std::string::npos) {
+            if (is_brace_in_comment(line, brace_pos) || is_brace_in_string(line, brace_pos)) {
+                continue;
+            }
+
+            if (is_function_opening_brace(line, brace_pos)) {
+                return i;
+            }
+        }
+    }
+    return -1; // Not found
+}
+
+// Extract function lines based on opening brace position
+auto extract_function_lines(const std::vector<std::string>& all_lines, int warning_line_index,
+                            int opening_brace_line, int function_line_count)
+    -> std::vector<std::string> {
+    std::vector<std::string> lines;
+    // clang-tidy counts from opening brace, but seems to exclude the final closing brace
+    // Add 1 to include the closing brace in our display
+    int function_end_line = opening_brace_line + function_line_count;
+
+    for (int i = warning_line_index;
+         i <= function_end_line && i < static_cast<int>(all_lines.size()); ++i) {
+        lines.push_back(all_lines[i]);
+    }
+    return lines;
+}
+
+// Extract function lines using clang-tidy's raw count (fallback)
+auto extract_function_lines_fallback(const std::vector<std::string>& all_lines,
+                                     int warning_line_index, int function_line_count)
+    -> std::vector<std::string> {
+    std::vector<std::string> lines;
+
+    for (int i = 0;
+         i < function_line_count && (warning_line_index + i) < static_cast<int>(all_lines.size());
+         ++i) {
+        lines.push_back(all_lines[warning_line_index + i]);
+    }
+    return lines;
+}
+
+// Read all lines from a file
+auto read_all_lines(const std::string& file_path) -> std::vector<std::string> {
+    std::vector<std::string> lines;
+    std::ifstream file(file_path);
+
+    if (file) {
+        std::string line;
+        while (std::getline(file, line)) {
+            lines.push_back(line);
+        }
+    }
+    return lines;
+}
+
+// Main function to read function lines from file
+auto read_function_lines(const nolint::Warning& warning) -> std::vector<std::string> {
+    if (!warning.function_lines.has_value()) {
+        return {};
+    }
+
+    auto all_lines = read_all_lines(warning.file_path);
+    if (all_lines.empty()) {
+        return {};
+    }
+
+    int warning_line_index = warning.line_number - 1; // Convert to 0-based
+    int function_line_count = *warning.function_lines;
+
+    int opening_brace_line = find_function_opening_brace(all_lines, warning_line_index);
+
+    if (opening_brace_line != -1) {
+        return extract_function_lines(all_lines, warning_line_index, opening_brace_line,
+                                      function_line_count);
+    } else {
+        return extract_function_lines_fallback(all_lines, warning_line_index, function_line_count);
+    }
+}
+
+// Render the full function view
+auto render_function_view(const nolint::UIModel& model) -> ftxui::Element {
+    using namespace ftxui;
+
+    const auto& warning = model.current_warning();
+    if (!warning.function_lines.has_value()) {
+        return text("No function data available") | center | border;
+    }
+
+    Elements elements;
+
+    // Read the full function from file first
+    auto function_lines = read_function_lines(warning);
+
+    // Header - show actual range being displayed
+    int start_line = warning.line_number;
+    int actual_end_line = start_line + static_cast<int>(function_lines.size()) - 1;
+
+    elements.push_back(
+        hbox({text("━━━ Function View "),
+              text("(" + std::to_string(function_lines.size()) + " lines: "
+                   + std::to_string(start_line) + "-" + std::to_string(actual_end_line) + ")")
+                  | color(Color::Cyan),
+              text(" ━━━ q/ESC: return ━━━")})
+        | bold | center);
+    elements.push_back(separator());
+
+    if (function_lines.empty()) {
+        elements.push_back(text("Error reading function from file") | color(Color::Red) | center);
+    } else {
+        // Calculate visible range based on terminal height
+        int terminal_height = Terminal::Size().dimy;
+        int start_offset = model.function_view_scroll_offset;
+        int total_function_lines = static_cast<int>(function_lines.size());
+
+        // Calculate space needed for UI elements
+        int header_lines = 2; // Title + separator
+        int footer_lines = 2; // Separator + navigation hints
+        int border_lines = 2; // Top and bottom border
+
+        // Check if scroll indicators will be shown
+        bool show_top_indicator = (start_offset > 0);
+        bool show_bottom_indicator = (start_offset + terminal_height < total_function_lines);
+
+        // Adjust available space based on which indicators are shown
+        int indicator_lines = (show_top_indicator ? 1 : 0) + (show_bottom_indicator ? 1 : 0);
+        int reserved_lines = header_lines + footer_lines + border_lines + indicator_lines;
+
+        int visible_lines = std::max(5, terminal_height - reserved_lines);
+        int end_offset = std::min(start_offset + visible_lines, total_function_lines);
+
+        // Show scroll indicator if needed
+        if (show_top_indicator) {
+            elements.push_back(text("  ↑ " + std::to_string(start_offset) + " lines above") | dim
+                               | color(Color::Yellow));
+        }
+
+        // Display visible lines
+        for (int i = start_offset; i < end_offset; ++i) {
+            int line_num = warning.line_number + i;
+            bool is_warning_line = (i == 0); // First line is the warning line
+
+            auto line_element
+                = hbox({text(std::to_string(line_num) + ": ") | dim | size(WIDTH, EQUAL, 6),
+                        text(function_lines[i])});
+
+            if (is_warning_line) {
+                line_element = line_element | bgcolor(Color::Blue);
+            }
+
+            elements.push_back(line_element);
+        }
+
+        // Show scroll indicator if needed
+        int remaining = total_function_lines - end_offset;
+        if (show_bottom_indicator) {
+            elements.push_back(text("  ↓ " + std::to_string(remaining) + " lines below") | dim
+                               | color(Color::Yellow));
+        }
+    }
+
+    // Footer with navigation hints
+    elements.push_back(separator());
+    Elements nav_hints;
+    nav_hints.push_back(text("↑/↓/j/k: scroll "));
+    nav_hints.push_back(text("• ") | dim);
+    nav_hints.push_back(text("Page Up/Down "));
+    nav_hints.push_back(text("• ") | dim);
+    nav_hints.push_back(text("gg: top "));
+    nav_hints.push_back(text("• ") | dim);
+    nav_hints.push_back(text("G: bottom "));
+    nav_hints.push_back(text("• ") | dim);
+    nav_hints.push_back(text("Home/End"));
+    elements.push_back(hbox(nav_hints) | dim | center);
+
+    return vbox(elements) | border;
+}
+
 // Render the UI with dynamic context sizing
 auto render_ui(const nolint::UIModel& model, int context_lines = 3) -> ftxui::Element {
     using namespace ftxui;
@@ -483,9 +699,18 @@ auto render_ui(const nolint::UIModel& model, int context_lines = 3) -> ftxui::El
         warning_count_text += " (filtered: " + model.search_filter + ")";
     }
 
+    // Build controls text
+    std::string controls = "↑↓: style | ←→: nav | /: search | t: stats";
+
+    // Add 'f: function' if current warning has function_lines
+    if (warning.function_lines.has_value()) {
+        controls += " | f: function";
+    }
+
+    controls += " | x: save | q: quit";
+
     elements.push_back(
-        hbox({text("  " + warning_count_text) | bold, text(" | "),
-              text("↑↓: style | ←→: nav | /: search | t: stats | x: save | q: quit") | dim}));
+        hbox({text("  " + warning_count_text) | bold, text(" | "), text(controls) | dim}));
 
     return vbox(elements) | border;
 }
@@ -561,6 +786,11 @@ int main(int argc, char* argv[]) {
 
     // Create main UI component with dynamic context sizing
     auto main_component = Renderer([&model] {
+        // Check if in function view mode
+        if (model.in_function_view) {
+            return render_function_view(model);
+        }
+
         // Calculate dynamic context lines based on terminal height
         int terminal_height = ftxui::Terminal::Size().dimy;
         int fixed_ui_lines = 13; // header(2) + warning_info(4) + context_header(1) + suppression(3)
@@ -623,6 +853,16 @@ int main(int argc, char* argv[]) {
                   input_event = InputEvent::SAVE_EXIT;
               } else if (event == Event::Character('t') || event == Event::Character('T')) {
                   input_event = InputEvent::SHOW_STATISTICS;
+              } else if (event == Event::Character('f') || event == Event::Character('F')) {
+                  input_event = InputEvent::FUNCTION_VIEW;
+              } else if (event == Event::Character('j') || event == Event::Character('J')) {
+                  input_event = InputEvent::VIM_J;
+              } else if (event == Event::Character('k') || event == Event::Character('K')) {
+                  input_event = InputEvent::VIM_K;
+              } else if (event == Event::Character('g')) {
+                  input_event = InputEvent::VIM_G; // lowercase g (for gg command)
+              } else if (event == Event::Character('G')) {
+                  input_event = InputEvent::VIM_CAPITAL_G; // Capital G - go to bottom
               } else if (event == Event::ArrowUp) {
                   input_event = InputEvent::ARROW_UP;
               } else if (event == Event::ArrowDown) {
@@ -631,6 +871,14 @@ int main(int argc, char* argv[]) {
                   input_event = InputEvent::ARROW_LEFT;
               } else if (event == Event::ArrowRight) {
                   input_event = InputEvent::ARROW_RIGHT;
+              } else if (event == Event::PageUp) {
+                  input_event = InputEvent::PAGE_UP;
+              } else if (event == Event::PageDown) {
+                  input_event = InputEvent::PAGE_DOWN;
+              } else if (event == Event::Home) {
+                  input_event = InputEvent::HOME;
+              } else if (event == Event::End) {
+                  input_event = InputEvent::END;
               } else if (event == Event::Character('/')) {
                   input_event = InputEvent::SEARCH;
               } else if (event == Event::Return) {

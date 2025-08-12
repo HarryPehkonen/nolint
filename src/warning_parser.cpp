@@ -23,10 +23,20 @@ auto WarningParser::parse(std::istream& input) -> std::vector<Warning> {
                 std::string next_line;
                 bool found_note = false;
 
-                // Look ahead up to 5 lines for the note (to skip source context lines)
-                for (int i = 0; i < 5 && std::getline(input, next_line); ++i) {
+                // Look ahead up to 50 lines for the note (clang-tidy can have many context lines)
+                for (int i = 0; i < 50 && std::getline(input, next_line); ++i) {
                     std::smatch note_match;
                     if (std::regex_match(next_line, note_match, note_pattern_)) {
+                        warnings.back().function_lines = std::stoi(note_match[1].str());
+                        found_note = true;
+                        break;
+                    }
+
+                    // Also try to catch note lines that mention readability-function-size
+                    // specifically
+                    std::regex alt_pattern{
+                        R"(.*note:\s+(\d+)\s+lines.*readability-function-size.*)"};
+                    if (std::regex_match(next_line, note_match, alt_pattern)) {
                         warnings.back().function_lines = std::stoi(note_match[1].str());
                         found_note = true;
                         break;

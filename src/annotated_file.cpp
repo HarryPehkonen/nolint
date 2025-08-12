@@ -29,38 +29,6 @@ auto load_annotated_file(const std::string& file_path) -> AnnotatedFile {
     return create_annotated_file(lines);
 }
 
-// Helper function to find the closing brace of a function
-auto find_function_closing_brace(const AnnotatedFile& file, size_t start_line_index,
-                                 int function_lines, const std::string& indent) -> size_t {
-    // Calculate expected function end position
-    int function_end_line_1based = static_cast<int>(start_line_index + 1) + function_lines - 1;
-    size_t expected_end_index = static_cast<size_t>(function_end_line_1based - 1);
-
-    // Search for closing brace within a reasonable range (up to 10 lines past expected)
-    const size_t search_range = 10;
-    size_t search_end = std::min(expected_end_index + search_range, file.lines.size());
-
-    for (size_t i = expected_end_index; i < search_end; ++i) {
-        const auto& line = file.lines[i].text;
-
-        // Check if line contains a closing brace
-        if (line.find('}') != std::string::npos) {
-            // Check if this brace is at the same indentation level as the function
-            std::string line_indent = extract_indentation(line);
-
-            // Line should only contain indentation and closing brace(s)
-            auto non_whitespace_pos = line.find_first_not_of(" \t");
-            if (line_indent == indent && non_whitespace_pos != std::string::npos
-                && line[non_whitespace_pos] == '}') {
-                return i;
-            }
-        }
-    }
-
-    // Fallback to expected position if not found
-    return expected_end_index;
-}
-
 // Apply inline NOLINT comment
 auto apply_inline_suppression(AnnotatedFile file, size_t line_index,
                               const std::string& warning_type) -> AnnotatedFile {
@@ -81,14 +49,14 @@ auto apply_nextline_suppression(AnnotatedFile file, size_t line_index,
 auto apply_block_suppression(AnnotatedFile file, size_t line_index, const Warning& warning)
     -> AnnotatedFile {
     if (warning.function_lines.has_value()) {
-        // Find the actual function's closing brace
-        std::string indent = extract_indentation(file.lines[line_index].text);
-        size_t closing_brace_index
-            = find_function_closing_brace(file, line_index, *warning.function_lines, indent);
+        // Use clang-tidy's function line count directly
+        size_t end_line_index = line_index + *warning.function_lines - 1;
 
-        file.blocks.push_back(BlockSuppression{.start_line = line_index,
-                                               .end_line = closing_brace_index,
-                                               .warning_type = warning.type});
+        // Ensure we don't go beyond the file
+        end_line_index = std::min(end_line_index, file.lines.size() - 1);
+
+        file.blocks.push_back(BlockSuppression{
+            .start_line = line_index, .end_line = end_line_index, .warning_type = warning.type});
     } else {
         // Fallback: just wrap the single line if no function_lines info
         file.blocks.push_back(BlockSuppression{
